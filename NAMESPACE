@@ -1,0 +1,22 @@
+export(	'svmmaj',
+		    'getHinge',
+		    'normalize',
+		    'svmmajcrossval',
+        'plotWeights',
+		    'isb')
+		    
+S3method(svmmaj,default)
+
+S3method(print  ,svmmaj)
+S3method(summary,svmmaj)
+S3method(predict,svmmaj)
+S3method(plot   ,svmmaj)
+
+S3method(print,      q.svmmaj)
+S3method(print,summary.svmmaj)
+
+S3method(print,hinge)
+S3method(plot ,hinge)
+
+#export('roccurve','svmmajtuning')
+

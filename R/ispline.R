@@ -50,7 +50,7 @@ isplinebasis <- function(x,knots,d){
 	}
 	
 	#REMOVE INTERCEPT
-	M <- M[,-1]
+	M <- M[,-1, drop = FALSE]
 	
 	#CREATE I-SPLINE
 	S <- array(1,dim=rep(NCOL(M),2))

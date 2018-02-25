@@ -1,0 +1,1222 @@
+\documentclass[article,shortnames]{jss}
+\usepackage[boxed]{algorithm2e}\IncMargin{1em}
+\renewcommand\AlCapFnt{\normalfont}
+\usepackage[counterclockwise]{rotating}
+\usepackage{amsmath}
+
+% \VignetteIndexEntry{paper}
+% \VignetteEngine{Sweave}
+
+\title{         
+  The Majorization Approach to SVM: The \pkg{SVMMaj} Package in \proglang{R}
+}
+\Plaintitle{    
+  The Majorization Approach to SVM: The SVMMaj Package in R
+}
+\author{ 
+  Hoksan Yip          \\ Erasmus University Rotterdam \And
+  Patrick J.F. Groenen\\ Erasmus University Rotterdam \AND
+  Georgi Nalbantov    \\ Maastricht University
+}	
+\Plainauthor{ 
+  Hoksan Yip, Patrick J.F. Groenen, Georgi Nalbantov
+}
+\Abstract{
+Support Vector Machines (SVMs) have gained considerable popularity over the last two decades for binary classification. This paper concentrates on a recent optimization approach to SVMs, the SVM majorization approach, or \pkg{SVM-Maj} for short. This method is aimed at small and medium sized Support Vector Machine (SVM) problems, in which \pkg{SVM-Maj} performs well relative to other solvers. To obtain an SVM solution, most other solvers need to solve the dual problem. In contrast, \pkg{SVM-Maj} solves the primal SVM optimization iteratively thereby converging to the SVM solution. Furthermore, the simplicity of \pkg{SVM-Maj} makes it intuitively more accessible to the researcher than the state-of-art decomposition methods. Moreover, \pkg{SVM-Maj} can easily handle any well-behaved error function, while the traditional SVM solvers focus particularly on the absolute-hinge error. In this paper, the \pkg{SVM-Maj} approach is enhanced to include the use of different kernels, the standard way in the SVM literature for handling nonlinearities in the predictor space. In addition, we introduce the \proglang{R} package \pkg{SVMMaj} that implements this methodology. Amongst its features are the weighting of the error for individual objects in the training dataset, handling nonlinear prediction through monotone spline transformations and through kernels, and functions to do cross validation.
+}
+\Keywords{Support Vector Machine, \pkg{SVM-Maj}, \proglang{R}, Majorization}
+\Plainkeywords{Support Vector Machine, SVM-Maj, R, Majorization}
+
+\Address{
+	Patrick J.F. Groenen\\
+	Econometric Institute\\
+	Erasmus University Rotterdam\\
+	3062 PA Rotterdam, The Netherlands\\
+	E-mail: \email{groenen@ese.eur.nl}\\
+	URL: \url{http://people.few.eur.nl/groenen}
+}
+
+%\Volume{1}
+%\Issue{1}
+%\Month{May}
+%\Year{2011}
+%\Submitdate{2011-05-03}
+%\Acceptdate{0000-00-00}
+
+\input{commands.tex}
+
+\begin{document}
+\SweaveOpts{concordance=FALSE}
+<<R session setup, echo=FALSE>>=
+options(prompt="R> ")
+options(mc.cores = 2)
+@
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%        INTRODUCTIONS
+%%%%
+%%%%===============================================
+%%%%===============================================
+\section{Introduction}
+For understanding what a support vector machine (SVM) is, consider the following data analysis problem: there are two groups of objects, say products of type A and type B, having some common attributes such as color, price, weight, etc. The task of separating the two types of objects from each other is formally referred to as the binary classification task. Given the values for the attributes of a new object, we would like to assign this new object to a given group, or class. Such a binary classification task is dealt with routinely in medical, technical, economic, humanitarian, and other fields.
+
+Numerous learning methods have been designed to solve the binary classification task, including Linear Discriminant Analysis, Binary Logistic Regression, Neural Networks, Decision Trees, Naive Bayes classifier, and others. In this paper, we focus on a method that has gained considerable popularity over the last two decades, called the Support Vector Machines (SVMs) classifier \citep{vapnik1995}. SVMs have emerged as one of the most popular and high-performing learning methods for classification. They have been successfully  applied to areas ranging from bioinformatics \citep[see, e.g.,][]{furey2000,guyon2000} to image recognition \citep[see, e.g.,][]{chapelle1999,pontil1998} and marketing \citep[see, e.g.,][]{cui2005}. In essence, SVMs divide two groups of objects from each other by building a hyperplane in the space of the predictor variables that separates them in an adequate way. The rapid success of SVMs can be attributed to a number of key qualities: robustness of results, avoiding overfitting, and the possibility to handle nonlinearities of the predictor variables easily through so-called kernel functions. In addition, the evaluation of an SVM model on test objects is relatively fast and simple. The SVM is formulated as a well-defined quadratic optimization problem that has a unique solution. Overfitting, that is, fitting an available training data-set too well, is avoided via a \emph{penalty} term that suppresses too complex potential fits. Nonlinearities can be handled in two ways: (1) by a preprocessing step of the predictor variables, for example, by polynomial expansion or the use of splines \citep{Groenen_etal2007} and (2) by using the \emph{kernel} trick that allows nonlinear solutions to be computed implicitly. Note that the use of kernels is very prominent in the SVM literature.
+
+A variety of solvers for the SVM optimization task have been proposed in the literature. One of the initial ideas has been to apply general-purpose quadratic optimization solvers such as \pkg{LOQO} \citep{vanderbei1994} and \pkg{MINOS} \citep{murtagh1998}. One of the problems of such solvers is that they require the whole \emph{kernel} matrix to be stored in memory, which is quadratic in the number of observations $n$. For small scale problems, this is not a problem, but for medium and large scale problems other methods are needed. One attempt to overcome the complete storage of the kernel matrix is by chunking \citep{boser1992,osuna1997a}. This method concentrates on a (working) subset of all training objects at a given iteration, effectively splitting the learning task into smaller subproblems that easily fit into the memory of a computer. Alternatively, direction search was proposed \citep{boser1992} that updates all unknown coefficients at each iteration in a certain feasible direction.
+
+More recently, decomposition methods have established themselves as the mainstream technique for solving SVMs \citep{osuna1997b,saunders1998,joachims1999}. At each iteration, the decomposition method optimizes a subset of coefficients, and leaves the remaining coefficients unchanged. Solving a series of very simple optimization subproblems, this approach has proven to be one of the fastest for large scale SVM problems. The most popular decomposition method is the so-called Sequential Minimal Optimization (SMO) \citep{platt1999}, where only two coefficients are updated at each iteration, which can actually be done analytically. SMO is the basis of popular SVM solvers such as \pkg{LibSVM}~\citep{lin2001} and \pkg{SVMlight}~\citep{joachims1999}, which has been implemented in the \proglang{R} packages \pkg{e1071}~\citep{r_e1071} respectively \pkg{klaR}~\citep{r_klar}. For the linear SVM case, alternative techniques to the decomposition methods have recently been put forward, such as the cutting plane algorithm \citep{joachims2006}.
+
+This paper concentrates on a recent optimization approach to solving SVMs \citep{Groenen_etal2007,groenen2008}, referred to as the majorization approach to SVMs, or \pkg{SVM-Maj} for short. This method is aimed at small and medium sized SVM problems. An overview of some popular SVM solvers and some of their properties is given in Table~\ref{tab:solvers}. The other solvers are \pkg{LibSVM}, \pkg{SVMlight}, \pkg{SVMTorch}~\citep{collobert2001}, \pkg{mySVM}~\citep{ruping2000}, \pkg{SVM-Perf}~\citep{joachims2006}, and \pkg{LibLINEAR}~\citep{fan2008}.
+
+\begin{table}[!ht]
+\centering
+\begin{scriptsize}
+\begin{tabular}{llllllll}\hline
+\textbf{Properties}           & \pkg{SVM-Maj} & \pkg{LIBSVM} & \pkg{SVMlight} & \pkg{SVMTorch} & \pkg{mySVM} & \pkg{SVM-Perf} & \pkg{LIBLINEAR} \\\hline
+Nonlinear kernels             & yes  & yes & yes & yes & yes & no  & no\\
+Splines                       & yes  & no  & no  & no  & no  & no  & no\\
+Suitable for large $n$        & yes  & yes & yes & yes & yes & no  & yes\\
+Suitable for large $k$        & yes  & yes & yes & no  & yes & no  & yes\\
+Suitable for large $n$ and    & no   & yes & yes & no  & yes & no  &    \\
+ \hspace{.25cm} large $k$      &      &     &     &     &     &     &    \\
+Dual approach                 & no   & yes & yes & yes & yes & yes & no\\
+Allows quadratic hinge        & yes  & yes*& no  & no  & yes & no  & yes\\
+Allows Huber hinge            & yes  & no  & no  & no  & no  & no  & no\\
+Allows $k$-fold cross val.    & yes  & yes & yes & no  & yes & no  & yes\\
+Language               &  \proglang{MATLAB}, \proglang{R} & \proglang{C++},\proglang{Java} & \proglang{C},
+        \proglang{C++}  & \proglang{C++} & \proglang{C} & \proglang{C++} & \proglang{C},
+        \proglang{C++}\\
+ Gui interface or command & \proglang{MATLAB}, \proglang{R} & \textit{cli} & \textit{cli} & \textit{cli} & \textit{cli} & \textit{cli} & \textit{cli}\\
+ \hspace{.25cm} line interface (\textbf{cli})   &                                 &   &   &   &   &   & \\
+ Availability in \proglang{R} & \pkg{SVMMaj} & \pkg{e1071}** & \pkg{klaR}** & no & no & no & \pkg{LiblineaR}\\
+ Multi-class problems & no & yes & yes & yes & no & yes & yes\\\hline
+* after modification\\
+\multicolumn{8}{l}{** for non-linear kernels, the package \pkg{kernlab} can be used}\\ 
+ \end{tabular}
+  \caption{Comparison table of different SVM solvers available in 2015.}\label{tab:solvers}
+ \end{scriptsize}
+
+ \end{table}
+
+In this paper, the method of \citet{groenen2008} is enhanced to the use of different kernels, the standard way in the SVM literature for handling nonlinearities in the predictor space. Moreover, we offer here a new special treatment for the case where the number of objects is less than the number of attributes. Three cases are distinguished for which \pkg{SVM-Maj} computes the solution efficiently: (1) the case with many more observations $n$ than variables $k$, (2) the case with many variables $k$ but medium sized $n$, and (3) the case that $n$ is medium sized and the kernel space or the space of the variables is of lower rank than $k$ or $n$. The case of large $n$ is relatively more difficult for all SVM solvers, including \pkg{SVM-Maj}. This particularly holds when kernels are used. For this case, the alternative of introducing nonlinearity through splines in \pkg{SVM-Maj} can be used so that still for medium sized $n$, nonlinearity can be handled efficiently.
+
+Amongst the advantages of the \pkg{SVM-Maj} approach are its intuitive optimization algorithm, its versatility, and the competitively fast estimation speed for medium sized problems. The majorization solver is an iterative algorithm with two easily tractable alternating steps that reveal the nature of solving the SVM optimization problem in an appealing way. The relative simplicity of \pkg{SVM-Maj} arguably makes it intuitively more accessible to the researcher than the state-of-art decomposition methods.  Traditional SVM solvers focus particularly on the absolute-hinge error (the standard SVM error function), whereas the majorization algorithm has been designed to incorporate any well-behaved error function. This property can be viewed as a attractive feature of the majorization approach. The \pkg{SVM-Maj} package comes with the following in-built error functions: the classic absolute-hinge, Huber-hinge, and quadratic hinge. Furthermore, \pkg{SVM-Maj} solves the \emph{primal} SVM optimization problem even in the nonlinear case, in contrast to other solvers, which solve the \emph{dual} problem. The advantage of solving the primal is that \pkg{SVM-Maj} converges to the optimal solution in each iterative step. In contrast, other methods solving the dual optimization problem need the dual problem to be fully converged to attain a solution.
+
+The main aim of this paper is to introduce the \pkg{SVMMaj} package for \proglang{R} \citep{Rprog}. Its main features are: implementation of the \pkg{SVM-Maj} majorization algorithm for SVMs, handling of nonlinearity through splines and kernels, the ability to handle several error functions (among other the classic hinge, quadratic hinge and Huber hinge error).
+
+In addition, \pkg{SVMMaj} is able to assign a fixed weight to each individual objects in a training dataset to receive different individual weights. In this way, the user can set importance of misclassifying the object by varying the individual weight. These weights can also be set per class. The \pkg{SVMMaj} package comes with a cross validation function to asses out-of-sample performance or evaluate meta parameters that come with certain SVM models.
+
+This paper is organized as follows. First, Section \ref{Sect:Loss} gives a brief introduction to SVMs. In Section~\ref{Sect:SVMMaj}, we describe the \pkg{SVM-Maj} algorithm and its update for each iteration is derived. Furthermore, Section~\ref{Sect:SVMMaj} also discusses some computational efficiencies, and Section~\ref{Sect:Nonlinear} presents the way nonlinearities are handled. Section~\ref{Sect:Examples} gives several detailed examples of how the \pkg{SVMMaj} package can be used, and Section~\ref{Sect:Discussion} concludes. The appendix gives technical derivations underlying the \pkg{SVM-Maj} algorithm.
+
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%        DEFINITIONS
+%%%%
+%%%%===============================================
+%%%%===============================================
+\section{Definitions}\label{Sect:Loss}
+First of all, let us introduce some notations: $n$ denotes the number of object; $k$ denotes the number of attributes, $\bX$ is an $n\times k$ matrix containing the $k$ attributes, without a column of ones to specify the intercept, $\by$ is an $n\times1$ vector with 1 if object $i$ belongs to class $1$ and $-1$ if it belongs to class $-1$, $r$ denotes the rank of matrix $\mathbf X$, and $\lambda> 0$ is the penalty parameter for the penalty term. The purpose of SVM is to produce a linear combination of predictor variables $\bX$ such that a positive prediction is classified to class $+1$ and a negative prediction to class $-1$. Let $\bbeta$ and $\alpha$ be parameters of the linear combination $\alpha + \mathbf x_i^\top\bbeta$. Then, for a given intercept $\alpha$ and vector with attribute weights $\bbeta$, the predicted class is given by
+%--------------------------------------------------------------
+%YHAT_I = SIGN(xi'beta + alpha) = sign(qi + alpha) = sign(~qi)
+%--------------------------------------------------------------
+\begin{equation*}
+    \hat{y_i} = \textrm{sign}(\textbf{x}_i^\top\bbeta + \alpha) = \textrm{sign}(q_i + \alpha) = \textrm{sign}(\tilde{q}_i),
+\end{equation*}
+where $q_i=\textbf{x}_i\bbeta$. Here, the term $\tilde{q}_i = q_i + \alpha$ is used to indicate the predicted score for object $i$, which also accounts for the intercept $\alpha$.
+
+To find the optimal of the linear combination, we use the SVM loss function as a function of $\alpha$ and $\bbeta$ to be minimized. The SVM loss function can be represented in several ways. Here, we follow the notation of \citet{groenen2008} that allows for general error functions $f_1 (\tilde{q}_i)$ and $f_{-1} (\tilde{q}_i)$. The goal of SVMs is to minimize the SVM loss function
+%------------------------------------------------------------------------------
+%SVM(alpha,beta) = sum(wi f1(~qi)) + sum(wi f_1(~qi)) + lambda beta'beta = ...
+%------------------------------------------------------------------------------
+\begin{align*}
+	\lefteqn{L_\mathrm{SVM}(\alpha,\bbeta)}\\
+	& \begin{array}{rclclcl}
+      &=& \sum_{i\in G_1} w_i f_1 (\tilde{q}_i)
+	  &+& \sum_{i\in G_{-1}} w_i f_{-1} (\tilde{q}_i)
+	  &+& \lambda \bbeta^\top\bbeta \\
+	  &=& \textrm{Class 1 errors}
+	  &+& \textrm{Class -1 errors}
+	  &+& \textrm{Penalty for nonzero }\bbeta,
+    \end{array}
+\end{align*}
+over $\alpha$ and $\bbeta$, where $G_1$ and $G_{-1}$ respectively denote the sets of class 1 and -1 objects, and $w_i$ is a given nonnegative importance weight of observation $i$. Note that \citet{groenen2008} proved that minimizing $L_\mathrm{SVM}(\alpha,\bbeta)$ is equivalent to minimizing the SVM error function in \citet{vapnik1995} and \citet{burges1998}. Figure~\ref{fig:hingefunctions} and Table~\ref{tab:loss:f} contain different error functions that can be used, such as the classical hinge error standard in SVMs, the quadratic hinge, and the Huber hinge. Figure~\ref{fig:hingefunctions} plots the error functions as function value of $\tilde{q}_i$. All three hinge functions have the property that their error is only larger than zero if the predicted value $\tilde{q}_i < 1$ for class $+1$ objects and $\tilde{q}_i > -1$ for class $-1$ objects. The classic absolute hinge error is linear in $\tilde{q}_i$ and is thus robust for outliers. However, it is also non-smooth at $\tilde{q}_i=1$. The quadratic hinge is smooth but may be more sensitive to outliers. The Huber loss is smooth as well as robust. Those observations $\mathbf{x}_i$ yielding zero errors do not contribute to the SVM solution and could therefore be removed without changing the SVM solution. The remaining observations $\mathbf{x}_i$ that do have an error or have $|\tilde{q}_i|=1$ determine the solution and are called support vectors, hence the name Support Vector Machine. Unfortunately, before the SVM solution is available it is unknown which of the observations are support vectors and which are not. Therefore, the SVM always needs all available data to obtain a solution.
+
+
+
+%-----------------------------------
+%HINGE FUNCTIONS
+%-----------------------------------
+\begin{figure}[!ht]\begin{center}
+<<Hingeplot, fig=TRUE, echo=FALSE, width = 12, height = 4>>=
+library(SVMMaj)
+library(ggplot2)
+library(reshape2)
+hinges <- sapply(
+  c("absolute", "quadratic", "huber"),
+  getHinge, delta = 2
+)
+q <- seq(-4, 2, by = 0.1)
+output <- data.frame(
+  q,
+  sapply(hinges, function(fun) fun(q, 1)$loss)
+)
+names(output) <- c("q", "Absolute hinge", "Quadratic hinge",  "Huber hinge \n(delta = 2)")
+
+ggplot(melt(output, id.vars = "q")) +
+  geom_line(aes(x = q, y = value)) + 
+  facet_grid(~ variable) +
+  ylim(0,8) +
+  xlab(expression(widetilde(q[i]))) +
+  ylab("error term class 1") +
+  theme_bw()
+
+@
+
+\caption{This figure shows the hinge error functions. Note that the error function is only nonzero if $\tilde{q}<1$.} \label{fig:hingefunctions}
+\end{center}\end{figure}
+
+
+	\begin{table}[!ht]
+		\begin{center}\begin{tabular}{ll}\hline
+			Error function	& $f_1 (\tilde{q}_i)$ 	    \\\hline\\
+			Absolute hinge	& $\max(0,1-\tilde{q}_i)$   \\\\
+			Quadratic hinge & $\max(0,1-\tilde{q}_i)^2$ \\\\
+			Huber hinge		& $\begin{cases}
+                                \dfrac{1}{2(\delta+1)}\max(0,1-\tilde{q}_i)^2 & \tilde{q}_i > -\delta \\\\
+								\dfrac{(\delta-1)}{2}-\tilde{q}_i             & \tilde{q}_i \leq -\delta
+                                \end{cases}$\\\\\hline
+
+		\end{tabular}\end{center}
+    \caption{Common error function used. The further $\tilde{q}_i$ is from wrongly predicted, the higher its error. Note that $f_{-1}(\tilde{q}_i) = f_1(-\tilde{q}_i)$, therefore, only $f_1(\tilde{q}_i)$ is described below.}		 \label{tab:loss:f}
+	\end{table}
+
+The weight $w_i$ of observation $i$ can be interpreted as the relative importance of the error of the observation. One can also assign the same weights for all observations in $G_1$ and different weight for those in $G_{-1}$. Assigning weights per class is especially useful when one class is substantially larger than the other. By assigning a larger weight for the smaller subset, one can correct the dominance of the errors of the larger subset. For example, if there are $n_{1}$ objects in $G_1$ and $n_{-1}$ objects in $G_{-1}$, then choosing
+
+\begin{equation*}
+    w_i = \begin{cases} (n_1 + n_{-1})/(2n_1)  & i \in G_1 \\
+                        (n_1 + n_{-1})/(2n_{-1})  & i \in G_{-1} \end{cases}
+\end{equation*}
+
+is one way to obtain equal weighting of the classes.
+
+A more compact expression of $L_\mathrm{SVM}$ is obtained by exploiting the symmetric relation $f_{-1}(\tilde{q}_i)=f_1(-\tilde{q}_i)=f_1(y_i \tilde{q}_i)$. Then, the SVM loss function can be simplified into
+%----------------------------------------------------------
+%SVM(alpha,beta) = sum(wi f1(yi ~qi) + lambda beta'beta
+%----------------------------------------------------------
+	\begin{equation}\label{tab:lossfunction}\begin{array}{lllll}
+		L_\mathrm{SVM}(\alpha,\bbeta)
+			&=& \sum_{i=1}^{n} w_i f_1 (y_i\tilde{q}_i) &+& \lambda \bbeta^\top\bbeta \\
+			&=& \textrm{Error }                         &+& \textrm{Penalty for nonzero $\bbeta$.}
+	\end{array}\end{equation}
+To minimize this function, we will use the \pkg{SVM-Maj} algorithm, discussed in the next section.
+
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%              SVM-MAJ ALGORITHM
+%%%%
+%%%%===============================================
+%%%%===============================================
+\section[the SVMMaj algorithm]{The \pkg{SVM-Maj} algorithm}\label{Sect:SVMMaj}
+The \pkg{SVMMaj} package minimizes the SVM loss function by using the \pkg{SVM-Maj} algorithm, that is based on the ideas of majorization \citep[see, e.g.,][]{deleeuw1980, DeLeeuw94, Heiser95, Lange_etal2000, Kiers2002, Hunter_Lange2004, borggroenen2005}. \citet{Groenen_etal2007,groenen2008} developed the algorithm for linear SVMs. Here, the \pkg{SVM-Maj} algorithm is extended to nonlinear situations that use a kernel matrix.
+
+The \pkg{SVM-Maj} algorithm uses iterative majorization to minimize the loss function (\ref{tab:lossfunction}). The main point of this algorithm is to iteratively replace the original function $f(x)$ by an auxiliary function $g(x,\overline{x})$ at supporting point $\overline{x}$, for which the minimum can be easily computed. The auxiliary function, called the majorization function, has the properties that:
+\begin{itemize}
+	\item the minimum $x^*$ of $g(x,\overline{x})$ can be found easily, and
+	\item $g(x,\overline{x})$ is always larger than or equal to the $f(x)$, and
+    \item at the supporting point $\overline{x}$, $g(\overline{x},\overline{x})$ is equal to $f(\overline{x})$.
+\end{itemize}
+
+Combining these properties gives the so-called sandwich inequality $f(x^*) \leq g(x^*,\overline{x}) \leq g(\overline{x},\overline{x}) = f(\overline{x})$. That is, for each support point $\overline{x}$, we can find another point $x^*$ of whose function value $f(x^*)$ is lower or equal to the former $f(\overline{x})$. Using this point $x^*$ as the next iteration's support point and repeating the procedure, a next update can be obtained with a lower $f(x)$ value. This iterative process produces a series of function values that is non-increasing and generally decreasing. Note that this principle of majorization also works if the argument of $f$ is a vector.  Moreover, if $f$ is strictly convex, as is the case with the SVM loss function, the updates converge to the minimum of the original function as the number of iterations increases.
+
+The first step is to find the majorizing functions for the different hinge errors. The majorization function of the \pkg{SVM-Maj} algorithm is a quadratic function so that its minimum is obtained by setting the derivative to zero. Given the support point $\overline{x}$, a quadratic majorization function $g(x,\overline{x})$ can be written as
+%---------------------------------------------
+%g(x,x*) = a(x*) x^2 - 2 b(x*) x + c(x*)
+%---------------------------------------------
+	\begin{equation}\label{eqn:maj:g}
+		g(x,\overline{x}) = a(\overline{x}) x^2 -  2 b(\overline{x}) x + o(\overline{x}).
+	\end{equation}
+As the parameter $o(\overline{x})$ is irrelevant for determining $\hat{x}$ as it is constant for a given $\overline{x}$, we shall write $o$ instead of $o(\overline{x})$ to indicate all terms that are not dependent on $x$ in the majorizing function.
+	
+Conform \citet{Groenen_etal2007,groenen2008}, $f_1 (y_i\tilde{q}_i)$ in (\ref{tab:lossfunction}) can be majorized by  $g(\tilde{q}_i,\overline{\tilde{q}}_i,y_i)= a_i \tilde{q}_i^2 - 2b_i \tilde{q}_i + o_i$ with the parameters $a_i$, $b_i$, and $o_i$ given in Table~\ref{tab:maj:abc}. As $f_1 (y_i\tilde{q}_i) \leq g(\tilde{q}_i,\overline{\tilde{q}}_i,y_i)$, we can obtain the majorization function for the SVM loss function (\ref{tab:lossfunction}), using $\tilde{\mathbf q} = \mathbf X\bbeta + \alpha\mathbf 1=\mathbf q+\alpha\mathbf 1$ and the support point $\overline{\tilde{\mathbf q}}=\overline{\alpha}\mathbf 1 + \overline{\mathbf q}$
+%-----------------------------------------------------------
+%Maj(beta,alpha) = sum(wi f1(yi ~qi)) + lambda beta'beta
+%               <= q'Aq - 2 q'b + lambda beta'beta + 0
+%-----------------------------------------------------------
+	\begin{align}\label{eqn:svmmaj}
+		\textrm{L}_\textrm{SVM}(\alpha,\bbeta)
+          & =    \sum_i w_i f_1 (y_i\tilde{q}_i) + \lambda\bbeta^\top\bbeta\nonumber\\
+		  &\leq  \sum_i w_i g(\tilde{q}_i,\overline{\tilde{q}}_i,y_i) + \lambda\bbeta^\top\bbeta + o\nonumber\\
+		  &=     \tilde{\mathbf q} ^\top \mathbf A \tilde{\mathbf q} - 2 \tilde{\mathbf q}^\top\mathbf b + \lambda\bbeta^\top\bbeta + o\nonumber\\
+		  &=     ( \alpha\mathbf 1 + \mathbf q )^\top \mathbf A ( \alpha\mathbf 1 + \mathbf q )
+		   - 2 ( \alpha\mathbf 1 + \mathbf q )^\top \mathbf b   + \lambda\bbeta^\top\bbeta+o \nonumber\\
+          & = \textrm{Maj}(\alpha,\bbeta),
+		\end{align}
+
+\noindent where $\mathbf A$ is an $n\times n$ diagonal matrix with elements $w_i a_i$ and
+$\mathbf b$ an $n\times1$ vector with elements $w_i b_i$ (with $a_i$ and $b_i$ from Table~\ref{tab:maj:abc}). As $w_i>0$ for all $i$, we can conclude that the diagonal matrix $\mathbf A$ is positive definite, which implies that the majorization function is strictly quadratically convex, thereby guaranteeing a unique minimum of the majorizing function at the right hand side of (\ref{eqn:svmmaj}). \citet{groenen2008} showed in their article that the minimum of (\ref{eqn:svmmaj}), that is, an update for the iteration process, can be computed as followed:
+
+\begin{equation}
+  \left( \widetilde{\bX}^\top\bA\widetilde{\bX} + \lambda\textbf{J} \right)
+  \begin{bmatrix} \alpha^+ \\ \bbeta^+ \end{bmatrix}
+   =
+  \tilde{\bX}^\top\bb,
+  \label{eqn:update:beta2}
+\end{equation}
+
+where $\widetilde{\bX} = \begin{bmatrix} \bo & \bX \end{bmatrix}$ and
+$\textbf{J} = \begin{bmatrix} 0 & \textbf{0}^\top\\ \textbf{0} & \bI\end{bmatrix}$. Appendix~\ref{Sect:Appendix} shows the derivation of this update, while Algorithm~\ref{fig:Alg2} shows the steps taken by the \pkg{SVM-Maj} algorithm.
+%-------------------------------------------------
+%Parameter A,b,c of majorization function
+%-------------------------------------------------
+	\begin{table}[t]\centering
+		\begin{tabular}{ll}\hline
+			Error term				& Parameters\\\hline\\
+			Absolute hinge			& $a_i=\frac{1}{4} \max(| 1- y_i\overline{\tilde{q}}_i |,\epsilon)^{-1}$  \\
+									& $b_i=y_ia_i(1 + |y_i\overline{\tilde{q}}_i-1|) $\\
+									& $o_i=a_i(1 + |y_i\overline{\tilde{q}}_i-1|)^2$ \\\\
+												
+			Quadratic hinge			& $a_i=1$\\
+									& $b_i=y_ia_i(1+\max(y_i\overline{\tilde{q}}_i-1,0) )$\\
+									& $o_i=a_i(1+\max(y_i\overline{\tilde{q}}_i-1,0))^2 $ \\\\
+											
+			Huber hinge				& $a_i=\frac{1}{2}(k+1)^{-1}$\\
+									& $b_i=y_ia_i (1 + \max(y_i\overline{\tilde{q}}_i-1,0) + \min(y_i\overline{\tilde{q}}_i+k,0))$\\
+									& $o_i=a_i (1  + \max(y_i\overline{\tilde{q}}_i-1,0) + \min(y_i\overline{\tilde{q}}_i+k,0))^2
+                                         + \min(y_i\overline{\tilde{q}}_i+k,0)$\\\\ \hline
+		\end{tabular}
+		\caption{Parameter values of $a_i$, $b_i$ and $o_i$ of the majorization function.}\label{tab:maj:abc}
+	\end{table}
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%                 SVM-MAJ UPDATE
+%%%%
+%%%%===============================================
+%%%%===============================================
+\subsection{Computational efficiencies}
+Before we continue with the discussion of the extended options for the \pkg{SVM-Maj} algorithm, we will introduce a few modifications of the \pkg{SVM-Maj} algorithm to obtain computational efficiencies. One efficiency can be achieved by using the QR-decomposition on matrix $\bX$ to find a more efficient update. Another efficiency improvement can be obtained in case of using the quadratic or Huber hinge and the number of updates generally decreases when using a \textit{relaxed update}. The algorithm is summarized in Algorithm~\ref{fig:Alg2} and the most important steps are discussed below and in the appendix.
+
+%------------------
+%  Algorithm
+%------------------
+\begin{algorithm}[!ht]
+  %\SetKwFor{ElseIf}{else if}{then}{end}
+  %\SetKwIf{If}{ElseIf}{Else}{if}{then}{else if}{else}{endif}
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \SetKwComment{Comment}{Comment:}{}
+
+  \SetAlgoLined
+
+  \TitleOfAlgo{~SVM-Maj}
+  \Input{$\mathbf y = n \times 1 $ vector with class labels $+1$ and $-1$ , \\
+        $\mathbf X = n \times k $ matrix of explanatory variables ,\\
+        $\lambda >0 $ the penalty parameter, \\
+        \textit{Hinge}= \{absolute,quadratic,huber\} the hinge error function, \\
+        $\delta >0 $ the Huber hinge parameter,\\
+        \textit{relax} determining from which step to use the relaxed update (\ref{eqn:increase.step}),\\
+        \textit{method} specifies whether $\boldsymbol\rho$ (using matrix decomposition) will be used or $\bbeta$. }
+  \Output{$\alpha_t$, ($\boldsymbol\rho_t$ or $\boldsymbol\beta_t$)}
+  \BlankLine
+  $t = 0$\;
+  Set $\epsilon$ to a small positive value\;
+  Set ($\boldsymbol\rho_0$ or $\bbeta_0$) and $\alpha_0$ to random initial values\;
+
+  Compute $L_0 = L_{\mathrm{SVM}}(\alpha_0,\boldsymbol\rho_0)$ or $L_{\mathrm{SVM}}(\alpha_0,\bbeta_0)$ according to (\ref{tab:lossfunction})\;
+  \uIf{hinge $\neq$ absolute \& method = $\boldsymbol\beta$}{
+    Find $\mathbf S$ that solves (\protect{\ref{eqn:beta:efficient}})\;
+  }\ElseIf{hinge $\neq$ absolute \& method = $\boldsymbol\rho$}{
+    Find $\mathbf S$ that solves  (\protect{\ref{eqn:rho:efficient}})\;
+  }
+  \While{$t=0$ or $(L_{t-1}-L_{t})/L_{t} >\epsilon$}
+  {
+    $t=t+1$\;
+    Compute $a_i$ and $b_i$ by Table~\ref{tab:maj:abc}\;
+    Set diagonal elements of $\bA$ to $w_ia_i$ and $\mathbf{b}$ to $w_ib_i$\;
+    \Comment{Compute update}
+    \uIf{hinge = absolute \& method = $\boldsymbol\rho$}{
+        Find $\alpha_t$ and $\boldsymbol\rho_t$ that solves (\protect{\ref{eqn:update:rho}}):
+    			$  \left( \widetilde{\mathbf Z}^\top\mathbf A\widetilde{\mathbf Z} + \lambda\mathbf J \right)
+              \begin{bmatrix} \alpha_t \\ \boldsymbol\rho_t \end{bmatrix}
+                 =  \widetilde{\mathbf Z}^\top\mathbf b$ \;
+    }\uElseIf{hinge = absolute \& method = $\boldsymbol\beta$}{
+        Find $\alpha_t$ and $\boldsymbol\rho_t$ that solves (\protect{\ref{eqn:update:beta2}}):
+    			$  \left( \widetilde{\mathbf X}^\top\mathbf A\widetilde{\mathbf X} + \lambda\mathbf J \right)
+              \begin{bmatrix} \alpha_t \\ \boldsymbol\beta_t \end{bmatrix}
+                 =  \widetilde{\mathbf X}^\top\mathbf b$ \;
+     }\uElseIf{hinge $\neq$ absolute \& method = $\boldsymbol\rho$ }{
+    	Find $\alpha_t$ and ($\boldsymbol\rho_t$ or $\bbeta_t$) that solves:
+                $\begin{bmatrix} \alpha^+ \\ \brho^+ \end{bmatrix}
+                    = \mathbf S \mathbf b$
+    }\ElseIf{  hinge $\neq$ absolute \& method = $\boldsymbol\beta$}{
+        Find $\alpha_t$ and ($\boldsymbol\rho_t$ or $\bbeta_t$) that solves:
+                $\begin{bmatrix} \alpha^+ \\ \bbeta^+ \end{bmatrix}
+                    = \mathbf S \mathbf b$\;
+    }
+
+  \If{t $\geq$ relax}{
+        Replace $\alpha_t = 2\alpha_t - \alpha_{t-1}$\;
+        Replace $\boldsymbol\rho_t  = 2\boldsymbol\rho_t   - \boldsymbol\rho_{t-1}$
+         or $\boldsymbol\beta_t  = 2\boldsymbol\beta_t   - \boldsymbol\beta_{t-1}$\;
+
+  }
+  Compute $L_{t}=L_{\mathrm{SVM}}(\alpha_{t},\boldsymbol\rho_{t})$ or $L_{\mathrm{SVM}}(\alpha_{t},\boldsymbol\bbeta_{t})$ according to (\ref{tab:lossfunction})\;
+  }
+
+  \caption{The SVM majorization algorithm}\label{fig:Alg2}
+\end{algorithm}
+
+\subsubsection{Efficient updates by using QR-decomposition}
+Usually, the loss function will be optimized by optimizing $\bbeta$. However, when $k>n$, it is more efficient to optimize $\bq$ instead, as it has a lower dimensionality. In this situation, the dimensional space in which the optimal parameter values lies will be smaller and therefore it is more efficient and generally faster to compute an update. In case that $r = \textrm{rank}(\bX) < \min(n,k)$, an even more efficient update exists. Moreover, in a higher dimensional space, one only needs a part of the space of $\bbeta$ to find the optimal $\bq$. The appendix discusses these issues more in detail and introduces efficient and consistent updates for \pkg{SVM-Maj} for all possible situations. An overview of all efficient updates in each occasion can be found in Table~\ref{tab:methods}.
+
+%===================
+%Update methods
+%===================
+	\begin{table}[t]
+		\begin{center}\begin{tabular}{cl}\hline
+        Method        & Situation\\\hline
+        $\bbeta$      & $n\geq k, r=k$ \\
+        $\bq$         & $n\leq k, r=n$\\
+        $\btheta$     & $r<\min(n,k) $\\\hline
+		\end{tabular}\end{center}
+		\caption{An overview of the most efficient updates for each situation.}	\label{tab:methods}
+	\end{table}
+
+
+Equation~\ref{eqn:update:beta2} optimizes $\boldsymbol\beta$ to optimize the loss function. However, in some cases, there exist an even more efficient update. Appendix~\ref{Sect:Appendix} derives an efficient update for each of these cases by making use of  the singular value decomposition (SVD)
+
+\begin{equation}\label{eqn:XPLQ2}\begin{array}{ccccc}
+		\bX             & = &     \bP       &   \bL       &   \bQ^\top,\\
+		(n\times k)     &   &  (n\times r)  & (r\times r) & (r\times k)
+\end{array}\end{equation}
+where $\bP^\top\bP = \bI$ and $\bQ^\top\bQ=\bI$ and $\bL$ is a diagonal matrix. However, \pkg{SVMMaj} package uses the QR-decomposition to determine the rank of $\bX$, as it is a computationally more efficient way to determine the rank of $\bX$ than doing so through the SVD-decomposition. Let the QR-decomposition of $\bX^\top$ be given by $\bX^\top = \mathbf{V} \mathbf{Z}^\top$ with $\mathbf{V}^\top\mathbf{V} = \bI$ and $\mathbf Z$ a lower triangular matrix. An additional QR-decomposition of $\mathbf{Z}$ gives $\mathbf{Z} = \mathbf{U}\mathbf{R}$ with $\mathbf{U}^\top\mathbf{U} = \bI$ and $\mathbf{R}$ an upper triangular matrix. Then we have
+%-------------
+% X = U R V'
+%-------------
+\begin{equation}\label{eqn:XURV}\begin{array}{ccccc}
+		\mathbf X       & = &   \mathbf U  &  \mathbf R  &  \mathbf V^\top.\\
+		(n\times k)     &   &  (n\times r) & (r\times r) & (r\times k)
+\end{array}\end{equation}
+
+Note that matrices $\mathbf U$ and $\mathbf V$ are orthonormal matrices and and therefore have the same properties as $\mathbf P$ and $\mathbf Q$. Thus, we can replace matrices $\mathbf P$, $\boldsymbol\Lambda$ and $\mathbf Q$ by respectively $\mathbf U$, $\mathbf R$ and $\mathbf V$. The update (\ref{eqn:update:beta2}) can then be computed through
+
+%-------------------------------
+% Z'AZ + lambda J ~beta = ~Z'b
+%-------------------------------
+\begin{equation}\label{eqn:update:rho}
+    (\tilde{\mathbf{Z}}^\top\mathbf A\tilde{\mathbf Z} + \lambda\mathbf J)
+        \begin{bmatrix} \alpha^+ \\ \boldsymbol\rho^+ \end{bmatrix}
+      = \tilde{\mathbf Z}^\top\mathbf b,
+\end{equation}
+where $\tilde{\mathbf Z} = \begin{bmatrix} \mathbf 1 & \mathbf Z \end{bmatrix} = \begin{bmatrix} \mathbf 1 & \mathbf{UR} \end{bmatrix}$ and where $\boldsymbol\rho=\mathbf V^\top\boldsymbol\beta$. Furthermore, $\boldsymbol\beta$ and $\mathbf q$ can be derived from $\boldsymbol\beta=\mathbf V \boldsymbol\rho$ and $\mathbf q = \mathbf Z\boldsymbol\rho = \mathbf U\mathbf R\boldsymbol\rho$. Note that in most cases, the decomposition of $\mathbf Z$ is not necessary to perform, so that only a single QR-decomposition performance is needed. As this decomposition is already performed to determine the rank of $\bX$, it is efficient to use update (\ref{eqn:update:rho}) in all three cases distinguished in Table~\ref{tab:methods}. Nevertheless, in case $n$ and $k$ are both very large, it may be more efficient not to perform a matrix decomposition at all to avoid unnecessary computations. Instead, one can use update (\ref{eqn:update:beta2}).
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%                 EFFICIENCIES
+%%%%
+%%%%===============================================
+%%%%===============================================
+\subsubsection{Quadratic and Huber hinge}\label{Sect:CompEff}
+For the quadratic and Huber hinge, the parameters $a_i$ does not depend on the support point $\overline{\tilde{\bq}}$, which means that the matrix $\bA$ remain fixed during the algorithm steps. In fact, the parameters $a_i$ are the same for all $i$, that is, $a_i=a$ for all $i$. Therefore, extra computational efficiency can be obtained by solving the linear system
+
+\begin{equation}\label{eqn:beta:efficient}
+ (a\widetilde{\mathbf X}^\top\widetilde{\mathbf X} + \lambda\mathbf J)\mathbf S = \widetilde{\mathbf X}^\top,
+\end{equation}
+
+or, when using QR-decomposition,
+
+\begin{equation}\label{eqn:rho:efficient}
+ (a\widetilde{\mathbf Z}^\top\widetilde{\mathbf Z} + \lambda\mathbf J)\mathbf S = \widetilde{\mathbf Z}^\top,
+\end{equation}
+so that the original update (\ref{eqn:update:rho}) can be simplified into
+
+\begin{equation}\label{eqn:update:rho:efficient}
+    \begin{bmatrix} \alpha^+ \\ \boldsymbol\rho^+ \end{bmatrix} = \mathbf S\mathbf b,
+\end{equation}
+
+so that in each iteration the update can be obtained by a single matrix multiplication instead of solving a linear system.
+
+\subsubsection{Computational efficiency by the relaxed updates}
+The parameter updates obtained by (\ref{eqn:update:rho}) find the minimum of the majorization function in (\ref{eqn:svmmaj}). This guarantees that the next update will always be better than the previous point. However, it turns out that often the updates converge faster when making the update twice as long by using a relaxed update \citep{deleeuw1980}:
+\begin{equation}\label{eqn:increase.step}
+  \btheta^*_{t+1} = \btheta_{t+1} + (\btheta_{t+1} - \btheta_t) = 2 \btheta_{t+1} - \btheta_t.
+\end{equation}
+This relaxation is most effective when \pkg{SVM-Maj} has already performed several iterations. Preliminary experimentation revealed that this is the case when at least 20 iterations without relaxed updates have been performed. Therefore, we will implement (\ref{eqn:increase.step}) after 20 iterations to increase model estimation efficiency.
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%              NONLINEARITIES
+%%%%
+%%%%===============================================
+%%%%===============================================
+\pagebreak
+\section{Nonlinearities}\label{Sect:Nonlinear}
+In the previous sections, we have only discussed the \pkg{SVM-Maj} algorithm for the linear case. However, often a better prediction can be obtained by allowing for nonlinearity of the predictor variables. Therefore, one might consider to use nonlinearity in the model estimation. In the \pkg{SVMMaj} package, two different implementation of nonlinearity can be used: I-splines and kernels. One can choose one of these implementation, or both of them.
+
+Splines are piecewise polynomial functions of a specified variable. The \pkg{SVMMaj} package can transform each explanatory variable into I-splines \citep{ramsay1988}. This transformation will split the original predictor variable $\mathbf x_j$ into a number of spline bases vectors gathered in the matrix $\mathbf B_j$. After specifying the interior knots $k_s$ that define the boundaries of the pieces and the degree $d_s$ of the polynomials, one can transform the variable $\mathbf x_j$ into the basis $\mathbf B_j$ of a size of $n\times(d_s+k_s)$. This spline basis $\mathbf B_j$ will then be used as a set of $(d_s+ k_s)$ variables to find a linear separating plane of a higher dimension. The piecewise polynomial transformation of variable $\mathbf x_j$ can then be obtained through computing the linear combination of the spline bases $\mathbf B_j \boldsymbol\gamma_j$ with the initially unknown weights $\boldsymbol\gamma_j$. Then, all spline bases $\mathbf B_j$ and weights $\boldsymbol\gamma_j$ are gathered in $\mathbf B = [\mathbf B_1, \mathbf B_2, \ldots, \mathbf B_k]$ and $\bbeta^\top = [\boldsymbol\gamma^\top_1, \boldsymbol\gamma^\top_2, \ldots, \boldsymbol\gamma^\top_k ]$ . Note that here we use I-splines as they have the property that if multiplied by positive weights, there is a guaranteed monotone relation with the original variable $\mathbf x_j$. This property can aid the interpretation of the weights as $\boldsymbol{\beta}$ can be split into a vector of positive and one of negative weights.
+
+It is also possible to map the matrix $\mathbf X$ differently into a higher dimensional space through so-called kernels. Let us map the explanatory variables of observation $i$, that is, $\mathbf x_i$ into $\phi(\mathbf x_i)$ with mapping function $\phi: \Re^k \rightarrow \Re^m$. Furthermore, let us denote $k_{ij} = \boldsymbol\phi(\mathbf x_i)^\top\boldsymbol\phi(\mathbf x_j)$ as the inner product of the transformed vectors of $\mathbf x_i$ and $\mathbf x_j$. Then, the \textit{kernel matrix} $\mathbf K$ is denoted as the inner product matrix with value $k_{ij}$ in row $i$ and column $j$. Note that the kernel matrix always is of size $n \times n$ and $\mathbf{K} = \boldsymbol{\Phi\Phi}^\top$ with row $i$ equal to $\phi(\mathbf{x}_i)^\top$. Using this property, we can summarize the mapping of $\bX$ even when $m \rightarrow \infty$ into a matrix of finite size, even if $m\rightarrow\infty$. This method is also known as the `kernel trick'.
+
+We will now show that this kernel matrix $\mathbf K$ can be used to find an efficient majorization update. Then the matrix $\boldsymbol\Phi$ is used instead of $\bX$ to derive the majorization update. Let us perform the QR-decomposition on $\boldsymbol\Phi$ analogous to (\ref{eqn:XURV}), that is
+
+\begin{equation}\label{eqn:PhiURV}\begin{array}{cccccccc}
+		\boldsymbol\Phi & = &   \mathbf U  &  \mathbf R  &  \mathbf V^\top &=& \mathbf Z & \mathbf V^\top,\\
+		(n\times m)     &   &  (n\times r) & (r\times r) & (r\times m) & & (n\times r) & (r\times m)
+\end{array}\end{equation}
+
+where $r$ denotes the rank of $\boldsymbol\Phi$ satisfying $r\leq\min(n,m) = n \ll \infty$. Note that the update (\ref{eqn:update:rho}) does not require $\mathbf{V}$. Moreover, the relation between $\boldsymbol\Phi$ and $\mathbf K$ can be given by $\mathbf K = \boldsymbol\Phi\boldsymbol\Phi^\top$. Using decomposition (\ref{eqn:PhiURV}) yields
+
+\begin{equation}\label{eqn:KPhiPhi}
+\mathbf K = \boldsymbol\Phi\boldsymbol\Phi^\top = (\mathbf Z\mathbf V^\top)(\mathbf V\mathbf Z^\top) =
+\mathbf Z\mathbf Z^\top.
+\end{equation}
+
+As $\mathbf Z$ is a lower triangular matrix, it can be obtained by performing a Cholesky decomposition on $\mathbf K$. Therefore, without actually computing the mapped space $\boldsymbol\Phi$, it is still possible to perform \pkg{SVM-Maj} by using the kernel matrix $\mathbf K$.
+
+There is a wide variety of available kernels to obtain nonlinearity of the predictors. Table~\ref{fig:kernel:type} shows some important examples of often used kernel functions.
+%----------------
+% TABLE: KERNEL
+%----------------
+\begin{table}\centering
+\begin{tabular}{ll}\hline
+    Type of kernel              &    Kernel function $\phi(\mathbf x_i)^\top\phi(\mathbf x_j)$ \\ \hline
+    linear                      &   $\mathbf x_i^\top\mathbf x_j$\\
+    homogeneous polynomial      &   $( \mathrm{scale}\, \mathbf x_i^\top\mathbf x_j )^\mathrm{degree} $\\
+    nonhomogeneous polynomial   &   $( \mathrm{scale}\, \mathbf x_i^\top\mathbf x_j + 1)^\mathrm{degree} $\\
+    radial basis function       &   $\exp(-\mathrm{sigma} |\mathbf x_i - \mathbf x_j|^2)$\\
+    Laplace                     &   $\exp(-\mathrm{sigma} |\mathbf x_i - \mathbf x_j|)$\\ \hline
+\end{tabular}
+\caption{Table of some examples of kernel functions, which can be used in the \pkg{SVMMaj} package.}
+\label{fig:kernel:type}
+\end{table}
+
+As $\mathbf V$ is usually unknown, $\boldsymbol\beta$ cannot be calculated. Nevertheless, it is still possible to predict the class labels of an unseen sample $\bX_2$. Using $\mathbf q = \boldsymbol\Phi\boldsymbol\beta$ and (\ref{eqn:PhiURV}), we can derive
+\begin{align*}
+\boldsymbol\beta      & = \mathbf V\boldsymbol\rho \\
+                      & = \mathbf V (\mathbf R^\top\mathbf U^\top\mathbf U(\mathbf R^\top)^{-1})\boldsymbol\rho\\
+                      & = (\mathbf V\mathbf R\mathbf U^\top)\mathbf U(\mathbf R^\top)^{-1}\boldsymbol\rho\\
+                      & = \boldsymbol\Phi^\top \mathbf U(\mathbf R^\top)^{-1}\boldsymbol\rho.
+\end{align*}
+The predicted values of an unseen test sample $\mathbf X_2$ are
+\begin{equation} \label{eqn:predict:theta}
+    \mathbf q_2 = \boldsymbol\Phi_2\boldsymbol\beta=\boldsymbol\Phi_2\boldsymbol\Phi^\top\mathbf U(\mathbf R^\top)^{-1}\boldsymbol\rho = \mathbf K_2 \mathbf U(\mathbf R^\top)^{-1}\boldsymbol\rho,
+\end{equation}
+where $\boldsymbol\Phi_2$ and $\boldsymbol\Phi$ are denoted as the transformed matrix of respectively $\mathbf X_2$ and $\mathbf X$ into the high dimensional space and $\mathbf K$ denotes the kernel matrix $\boldsymbol\Phi_2\boldsymbol\Phi^\top$.
+
+
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%                 EXAMPLES
+%%%%
+%%%%===============================================
+%%%%===============================================
+\section[The SVMMaj package in R]{The \pkg{SVMMaj} package in \proglang{R}}
+\label{Sect:Examples}
+The \pkg{SVM-Maj} algorithm for the Support Vector Machine (SVM) is implemented in the \pkg{SVMMaj} package in \proglang{R}. Its main functions are \texttt{svmmaj}, which estimates the SVM, and \sloppypar{\texttt{svmmajcrossval}}, which performs a grid search of \textit{k}-fold cross validations using \pkg{SVM-Maj} to find the combination of input values, (such as $\lambda$ and $\mathrm{degree}$ in the case of a polynomial kernel) giving the best prediction performance.
+
+The \texttt{svmmaj} function requires the $n\times k$ attribute matrix \texttt{X} and the $n\times 1$ vector $\by$ with class labels. Apart from the data objects, other parameter input values can be given as input to tune the model: \texttt{lambda}, \texttt{hinge}, \texttt{weights.obs}, \texttt{scale} and parameters for nonlinearities and settings of the algorithm itself. Table~\ref{tab:default} shows the arguments of function \texttt{svmmaj} and its default values. For example,
+
+%-------------------------
+% TABLE: INPUT VALUES
+%-------------------------
+\begin{sidewaystable}[p]\begin{footnotesize}
+\centering
+\begin{tabular}{lp{2cm}p{15cm}}\hline
+Parameter & Values & Description\\\hline
+\texttt{lambda}
+    & scalar
+    & Nonnegative penalty parameter of the penalty term. Default value is 1.\\
+
+\texttt{hinge}
+    & &Specifies the hinge error term:\\
+    & \texttt{'absolute'}*
+    & = Use the absolute hinge error.\\
+    & \texttt{'quadratic'}
+    & = Use the quadratic hinge error.\\
+    & \texttt{'huber'} 	
+    & = Use the Huber hinge error.\\
+
+\texttt{weights.obs}
+    & vector
+    & Vector with the nonnegative weight for the residual of each object or class, which can either be a vector of length 2 to specify the weights for each class, or a vector of length \texttt{length(y)} giving the weights for each object $i$. Default value is \texttt{c(1,1)}\\
+%\texttt{weights.var} 		
+%    & positive vector
+%    & Vector of length \texttt{NCOL(X)} with weights for each attribute\\
+\texttt{scale}
+     & \texttt{'zscore'}
+     & =Rescales all variables in $\bX$ to have zero mean and standard deviation equal to 1. \\
+     & \texttt{'interval'}
+     & =Rescales all variables in $\bX$ to be in the range $[0,1]$.\\
+     & \texttt{'none'}*
+     & =No scaling is done.\\
+\texttt{decomposition}
+    & logical
+    & In case of a linear kernel, \code{decomposition=FALSE} will not perform a decomposition at all and uses update \ref{eqn:update:beta2} instead.\\
+\hline %-------------------------------------------------------------------------------------------------------
+\texttt{spline.knots}
+    & integer 	& Number of interior knots of the spline which is equal to one less than the number of adjacent intervals. Default value is 0, which corresponds with a single interval.\\
+\texttt{spline.degree}
+    & integer 	& Degree of the spline basis. Default value is 1, representing the linear case.\\
+\texttt{kernel}
+    & &The kernel function of package \texttt{kernlab}, which specifies which kernel type to be used. Possible kernels and its parameter values are amongst others:\\
+    & \texttt{vanilladot}
+    & = The linear kernel: \texttt{k(x,x') = <x,x'>}.\\
+    & \texttt{polydot}
+    & = The polynomial kernel: \texttt{k(x,x') = (scale <x,x'> + offset) $\hat{ }$ degree}.\\
+    & \texttt{rbfdot}
+    & = The Gaussian Radial Basis Function (RBF) kernel: \texttt{k(x,x') = exp(-sigma  |x - x'|) $\hat{ }$  2}.\\
+    & \texttt{laplacedot}
+    & = The Laplacian kernel: \texttt{ k(x,x') = exp(-sigma |x - x'|) }.\\
+\texttt{kernel.sigma} & 1
+    & Kernel parameter \texttt{sigma} used in the RBF and Laplacian kernel.\\
+\texttt{kernel.degree} & 1
+    & Kernel parameter \texttt{degree} used in the polynomial kernel.\\
+\texttt{kernel.scale} & 1
+    & Kernel parameter \texttt{scale} used in the polynomial kernel.\\
+\texttt{kernel.offset} & 0
+    & Kernel parameter \texttt{offset} used in the polynomial kernel.\\\\
+
+\hline %-------------------------------------------------------------------------------------------------------
+\texttt{convergence}
+    & double
+    & Specifies the convergence criterion of the algorithm. Default value is \texttt{3e-7} \\
+\texttt{print.step} 		
+    & logical
+    & \texttt{print.step=TRUE} shows the progress of the iteration. Default value is \texttt{FALSE}.\\
+\texttt{initial.point} 	
+    & vector
+    & Initial values $[\alpha_0$  $\brho_0]$ (see Algorithm \ref{fig:Alg2}) to be used in the \pkg{SVM-Maj} algorithm, the length of the vector equals the rank of explanatory matrix \texttt{X} plus one. \\
+\texttt{increase.step}	
+    & integer
+    & The iteration level from where the relaxed update (\ref{eqn:increase.step}) will be used. Default value is 20. \\
+\texttt{na.action}
+    & \code{na.action}
+    & Specifies which \code{na.action} object will be used to handle missing values. Default is omit observations with missing values.\\
+\hline
+\end{tabular}
+\caption{Parameter input values of \texttt{svmmaj}. The default settings are marked with *}
+\label{tab:default}
+\end{footnotesize}
+\end{sidewaystable}
+
+<<svmmaj usage, echo = TRUE, eval=FALSE>>=
+svmmaj(X, y, lambda = 2, hinge = "quadratic", scale = "interval")
+@
+
+runs the SVM model with $\lambda=2$, using a \textit{quadratic} hinge and for each attribute, the values are scaled to the interval [0,1].
+
+The function \texttt{svmmajcrossval} uses the same parameter input values and additionally the parameters to be used as grid points of the \textit{k}-fold cross validation. These parameters should be given in the list object \texttt{search.grid}, e.g.,
+
+<<svmmajcrossval usage, echo = TRUE, eval=FALSE>>=
+svmmajcrossval(X, y, search.grid = list(lambda = c(1, 2, 4)))
+@
+
+
+performs a cross validation of \texttt{X} and \texttt{y} with as grid points $\lambda=1,2,4$.
+
+As an example, we use the \texttt{AusCredit} data set of the \texttt{libsvm} data sets \citep{lin2001}, which is included in the \pkg{SVMMaj} package. This data set consists of in total 690 credit requests, 307 of which are classified as positive and 383 as negative. These classifications are stored in \texttt{AusCredit\$y}  with class label \texttt{Rejected} to represent the negative responses, and label \texttt{Accepted} for the positive responses. In total, 14 attributes of each applicant has been stored as explanatory variables in \texttt{AusCredit\$X}. Due to confidentiality, the labels of all explanatory variables are not available. Moreover, the observations in the data set \texttt{AusCredit} is split into \texttt{AusCredit.tr}, consisting the first 400 observations, and \texttt{AusCredit.te}, with the remaining 290 observations. \texttt{AusCredit.tr} will be used to estimate the model, while the \texttt{AusCredit.te} is used to analyze the prediction performances.
+\vspace{5 mm}
+
+\noindent\textbf{Example 1} \textit{Train the SVM-model using the data set of Australian credit requests to classify the creditability of the applicant.}
+
+\noindent The command
+
+<<Package load, echo = TRUE, eval = TRUE>>=
+library("SVMMaj")
+@
+
+\noindent loads the \pkg{SVMMaj} package into \proglang{R}. In this example, we will use the components \texttt{X} and \texttt{y} in the training set \texttt{AusCredit.tr}, which consists of explanatory variables respectively class labels of 400 credit requests, to train the model. Afterwards, the characteristics of the remaining 290 requests, which has been stored into component \texttt{X} of test set \texttt{AusCredit.te}, are used to predict the classification of the applicant. Using the actual class labels, \texttt{AusCredit.te\$y}, the out of sample prediction performance is analyzed by comparing the ones with the predicted using the SVM model as estimated with \texttt{AusCredit.tr}. Running the SVM on the training data is done as follows.
+
+<<svmmaj example>>=
+model <- svmmaj(AusCredit.tr$X, AusCredit.tr$y, lambda = 100)
+model
+@
+
+As a result, the trained model will be returned as an \texttt{svmmaj}-object. The \texttt{print} method of this object shows which update method is used, the number of iterations before convergence, the found minimum loss value and the number of support vectors. In case no kernel is used, the matrix $\mathbf Z$ from update (\ref{eqn:update:rho}) is obtained through the QR-decomposition shown in (\ref{eqn:XURV}) by default. In case a nonlinear kernel is used, $\mathbf Z$ is being calculated through the Cholesky decomposition (\ref{eqn:KPhiPhi}). One can choose not to perform a decomposition when using a nonlinear kernel by specifying \texttt{decomposition = FALSE}. Then the original update (\ref{eqn:update:beta2}) will be used. A graph of the distribution of the predicted values $\tilde{\bq}$ for each class can be plotted via the \texttt{plot()}  method using the \code{density} function of \proglang{R}, see Figure~\ref{fig:modelplot}. The distribution shows that the majority of the \code{Accepted} class ($-1$) respondents received predicted $\tilde{q}_i$ close to -1 and only a few close to +1. The same holds for the \code{Rejected} class ($+1$) respondents showing that the majority of respondents are correctly classified. A more detailed description of the model can be requested by using the \texttt{summary()}  method.
+
+%------------------------
+% GRAPHICS: MODELPLOT
+%------------------------
+\begin{figure}[t]\begin{center}
+<<modelplot, fig=TRUE, echo=FALSE, width=12>>=
+plot(model)
+@
+\caption{This figure shows the distribution of predicted values $\overline{\tilde{q}}$ of the two classes of Example 1, which can be obtained through the \texttt{plot()} method. These densities are created by the \texttt{density} function. This function specifies beforehand the bandwidth value to plot the density, which is shown on top of the graph.}\label{fig:modelplot}
+\end{center}\end{figure}
+
+
+<<model summary>>=
+summary(model)
+@
+
+
+\noindent The \texttt{Settings} segment describes the parameter settings used to estimate the model. In this example, the scales of the explanatory variables have not been changed and a linear model is specified because no spline or nonlinear kernel is used. Furthermore, the penalty term of the loss function consists of an absolute hinge, with a penalty parameter $\lambda$ of 1.
+In the \texttt{Data} segment, the properties of the input data are shown: the labels of each class, the rank of the explanatory variable matrix $\bX$ (in case of using I-splines, this will be the rank of the resulting spline bases) and the size of the data (the number of objects and number of predictor variables). \pkg{SVMMaj} has the possibility to handle missing values through a specified \code{na.action}-object. In case observations with missing values are omitted, the number of omitted observations will also be printed in this segment.
+The \texttt{Model} segment summarizes the trained model as a result of the \pkg{SVM-Maj} algorithm: it specifies which update has been used, the number of iterations needed to obtain this model, the optimal loss value and the number of support vectors.
+The classification performance of the model on the data used to estimate can be found in the last segment, \texttt{Classification table}, where the confusion matrix is followed by measured \textit{true positive (TP)}, \textit{false positive (FP)} and \textit{precision} below. True positive of a class denotes the proportion of objects of that class that are being predicted correctly, whereas false positive denotes proportion of the incorrectly predicted objects of a class. The precision of a class is the proportion of correctly predicted objects of the class among all objects predicted to be classified as that class.
+
+Next, we would like to test how well the estimated SVM model predicts an unseen sample: the 290 objects in \code{AusCredit.te\$X} is used as hold-out sample. This is done through the \texttt{predict()} method.
+
+<<predict output>>=
+predict(model, AusCredit.te$X)
+@
+
+If the actual class labels are known, one can include this object in the method to show the prediction performance:
+
+<<Predict output with observed>>=
+predict(model, AusCredit.te$X, AusCredit.te$y)
+@
+
+The classification measures of this unseen sample prediction are similar to these of the in-sample predictions, which mean that this model has no problem of overfitting. Moreover, average hit rate of 85\% indicates that this model predicts the objects quite well. Note the difference in true positive value between the classes; it appears that this model predicts classes in class \code{Accepted} slightly better than the other class.
+
+\noindent To show a the distribution of $\hat{\textbf{q}}$ for all applicants or, if the actual class labels are given, for each class, the argument \code{show.plot=TRUE} can be included, which result into a figure as in Figure~\ref{fig:predictplot}.
+
+%--------------------------------
+% GRAPHICS: PREDICTPLOT
+%--------------------------------
+\begin{figure}[!ht]\begin{center}
+<<Predictmodelplot, fig=TRUE, echo=FALSE, width=12>>=
+predict(model, AusCredit.te$X, AusCredit.te$y, show.plot = TRUE)
+@
+\caption{Densities of the predictions in $\tilde{\bq}$ split by class.}\label{fig:predictplot}
+\end{center}\end{figure}
+
+As this model does not contain any nonlinearity and $\bX$ is nonstandardized, $\tilde{q}_i$ for the holdout sample can also be directly computed using the weights \texttt{model\$beta} and constant \texttt{model\$theta[1]} found in the model and multiply this with the explanatory variables of the unseen sample \texttt{AusCredit.te\$X}, after being coerced into a \texttt{matrix} object.
+
+
+<<Model parameters>>=
+model <- svmmaj(AusCredit.tr$X, AusCredit.tr$y, scale = 'none', lambda = 100)
+alpha <- model$theta[1]
+beta  <- model$beta
+qu  <-  drop(alpha + data.matrix(AusCredit.te$X) %*% beta)
+@
+
+The predicted classes are then easily obtained by computing.
+
+<<Model parameters to label>>=
+y <- factor(qu < 0, levels = c(TRUE, FALSE), labels = model$classes)
+@
+
+\subsection{Cross validation}
+Until now, the default settings have been used. However, it is recommended to experiment with different parameters to obtain an optimal prediction model, in particular by varying the penalty parameter $\lambda$. To determine the optimal parameter values to be used in further analysis, one can use the \texttt{svmmajcrossval} function to perform cross validation with different parameter values. To show an example of using cross validation to determine $\lambda$, consider the \texttt{voting} data set the \texttt{libsvm} data sets \citep{lin2001}. This data set corresponds with 434 members of the U.S. House of Representatives Congressmen consisting of 167 republicans and 267 democrats. As the explanatory variables, for each of the 16 different political propositions, the votes of the politicians are registered. Using the SVM, we are trying to predict the political wing of the last 134 members using their 16 votes on the propositions as predictor variables. The first 300 members are used as a training sample. A five-fold cross validation is performed on these 300 members in the training sample, with a fine grid of lambda values $\lambda = 10^{-6} , 10^{-5.5}, \ldots,10^5 , 10^{5.5} , 10^6$. Amongst these lambda values, the optimal $\lambda$ value is the one which results in the lowest misclassification rate.
+
+\vspace{5mm}
+
+\noindent\textbf{Example 2} \textit{Performing cross validation using the voting  data sets to find an optimal value for \code{lambda}. }
+
+<<Package load pt 2>>=
+library("SVMMaj")
+@
+
+\noindent
+In this example, we will use the data in \texttt{voting.tr} to perform fivefold-cross validation to determine the optimal \texttt{lambda}. Then, this \texttt{lambda} is used in an SVM analysis on the entire data set \texttt{voting.tr}. Subsequently, this model is used to predict the classification of the unseen sample \texttt{voting.te}. Then, \texttt{voting.te\$X} can be used to compare the prediction with the actual classification \texttt{voting.te\$y}. This procedure can be executed in R using the following commands:
+
+
+<<svmmajcrossval absolute hinge example>>=
+results.absolute <- svmmajcrossval(
+  voting.tr$X, voting.tr$y, 
+  search.grid = list(lambda = 10^seq(4, -4)),
+  hinge = "absolute", convergence = 1e-4)
+model <- svmmaj(
+  voting.tr$X, voting.tr$y, hinge = "absolute", 
+  lambda = results.absolute$param.opt$lambda)
+q.absolute <- predict(model, voting.te$X, voting.te$y)
+@
+
+\subsection{Hinge functions}
+ \pkg{SVMMaj} allows using the quadratic hinge or the Huber hinge instead of the standard absolute hinge. An important advantage of the quadratic hinge is that it has the potential to be computationally much more efficient than the absolute hinge. Let us perform a similar cross validation on the \texttt{voting} data set using the quadratic hinge by
+
+<<svmmajcrossval quadratic hinge example>>=
+results.quadratic <- svmmajcrossval(
+  voting.tr$X, voting.tr$y,
+  search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+  hinge = "quadratic", convergence = 1e-4)
+model <- svmmaj(
+  voting.tr$X, voting.tr$y, hinge = "quadratic",
+  lambda = results.quadratic$param.opt$lambda)
+q.quadratic <- predict(model, voting.te$X, voting.te$y)
+@
+
+A summary of the results of these examples can be found in Table~\ref{tab:cv}. Figure~\ref{fig:hingecv} shows the hit rate of the cross validation using different lambda values. It can be seen that both hinges have similar out-of-sample predictive power. It is also clear that per iteration, the quadratic hinge is much faster than the absolute hinge. The effect of the increased computational efficiency of the quadratic hinge is in this example canceled by a large increase of the number of iterations as it requires more iterations to converges.
+
+%----------------------------------
+%GRAPHICS: HINGE CV
+%----------------------------------
+\begin{figure}[t]\begin{center}
+ \SweaveOpts{width=12, height=6}
+<<svmmajcrossvalresultscompare,fig=TRUE, weight = 12, height = 6, echo=FALSE>>=
+library(gridExtra)
+grid.arrange(
+  plot(results.absolute) + 
+    ggtitle("Absolute hinge") + 
+    ylab("Misclassification rate") +
+    ylim(0, 1),
+  plot(results.quadratic) +
+    ggtitle("Quadratic hinge") + 
+    ylab("Misclassification rate") +
+    ylim(0, 1),
+  ncol = 2
+)
+@
+\caption{The function \texttt{svmmajcrossval} performs a fivefold cross validation of different \texttt{lambda} values of both absolute hinge (left panel) and the quadratic hinge (right panel). This figure shows the misclassification rate of different \texttt{lambda} values.}\label{fig:hingecv}
+\end{center}\end{figure}
+
+%------------------------------
+%TABLE: PERFORMANCE CV
+%------------------------------
+<<svmmajcrossval result,echo=FALSE,results=tex>>=
+library(xtable)
+
+values <- data.frame(
+  " " = c("CPU-time (sec)", "Mean no. of iter",
+         "CPU-time (per iter)", "Optimal p", 
+         "Hit rate (average TP)"),
+  'Absolute'  = rep(0, 5),
+  'Quadratic' = rep(0, 5),
+  check.names = FALSE
+)
+
+time.quadratic <- system.time(
+  results.quadratic <- svmmajcrossval(
+    voting.tr$X, voting.tr$y,
+    search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+    hinge = "quadratic")
+)
+
+time.absolute <- system.time(
+  results.absolute <- svmmajcrossval(
+    voting.tr$X, voting.tr$y, 
+    search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+    hinge = "absolute")
+)
+
+values$Absolute <- c(
+  time.absolute[['elapsed']], results.absolute$iter,
+  time.absolute[['elapsed']] / results.absolute$iter,
+  log(results.absolute$param.opt$lambda) / log(10),
+  mean((results.absolute$qhat < 0) ==  (attr(results.absolute$qhat, 'y') < 0))
+)
+
+values$Quadratic <- c(
+  time.quadratic[['elapsed']], results.quadratic$iter,
+  time.quadratic[['elapsed']] / results.quadratic$iter,
+  log(results.quadratic$param.opt$lambda) / log(10),
+  mean((results.quadratic$qhat < 0) == (attr(results.quadratic$qhat, 'y') < 0))
+)
+
+rownames(values) <- NULL
+table <- xtable(
+  values,
+  label = "tab:cv",
+  caption = "Results of the fivefold cross validation estimation using the \\texttt{svmcrossval} function. CPU-time is the time in CPU seconds needed to perform fivefold cross validation and Optimal $p$ the value of which $10^p$ returns the best hit rate in the cross validation. Mean no. of iterations denotes the average value of the sum of the number of iterations per \\texttt{lambda}-value. CPU-time per iter is the mean computation time needed to perform one iteration. Hit rate is the average TP value by predicting the class labels of the holdout sample of 134 congress men using the first 300 congress men as sample of estimation."
+)
+  
+print(table, include.rownames = FALSE)
+@
+
+\subsection{Nonlinearities}
+The package \pkg{SVMMaj} can also implement nonlinearity in the model. One can choose to use I-splines, kernel matrices, or both methods to specify the nonlinearity. In the latter case, \pkg{SVMMaj} will first convert the explanatory matrix \texttt{X} into spline-basis and subsequently generate the kernel matrix of the spline-basis. An advantage of using I-splines over kernels is that on can easily plot the effect of one variable on the predicted value $\hat{q}_i$. In the following example, we will use the \texttt{diabetes} dataset of \texttt{libsvm} data sets \citep{lin2001}.
+
+\vspace{5mm}\noindent \textbf{Example 3} \textit{Train a model with nonlinearities on a data set of 786 females of Pima Indian heritage, predicting the presence of diabetes using several demographic and medial variables. }
+
+In this example, we will use the nonlinear options of \texttt{svmmaj} to train a model consisting of 768 female at least 21 years old of Pima Indian heritage, of which 268 are being tested positive for diabetes. In this model, we use 8 variables of state-of-health measures to classify these patients as positive for diabetes or negative. As the number of persons with a positive test result is smaller than the ones with negative results, the loss term of the patients belonging to the former group will be weighted twice as heavy by the extra argument \texttt{weights.obs=list(positive=2,negative=1)} to indicate the double weight on the second group. As the rank of the explanatory matrix $\bX$ is expected to be large, we will use quadratic hinge to make use of the computational efficiency discussed before.
+
+\subsubsection{I-Spline}
+One way of applying nonlinearities in the model is using splines. In this example, we will transform each variable into spline basis of 5 knots and a degree 2, yielding a rank of $8\times(5+2)=56$, that is, $k=8$ times the number of columns per spline basis (5 interior knots plus the degree of 2). Five-fold cross validation is used with a grid of $\lambda = 10^{-6} , 10^{-5}, ..., 10^4 , 10^5 , 10^6$ to determine the optimal $\lambda$ value.
+
+
+<<svmmajcrossval spline example>>=
+results.spline <- svmmajcrossval(
+  diabetes.tr$X, diabetes.tr$y,
+  scale = "interval", search.grid = list(lambda = 10^seq(6, -6)),
+  hinge = "quadratic", spline.knots = 5, spline.degree = 2,
+  weights.obs = list(positive = 2, negative = 1))
+model.spline <- svmmaj(
+  diabetes.tr$X, diabetes.tr$y,
+  scale = "interval", lambda = results.spline$param.opt$lambda,
+  spline.knots = 5, spline.degree = 2, hinge = "quadratic",
+  weights.obs = list(positive = 2, negative = 1))
+predict(
+  model.spline, diabetes.te$X, diabetes.te$y,
+  weights = list(positive = 2, negative = 1))
+@
+
+The optimal \texttt{lambda} for the model using I-splines can be found in \texttt{results.spline\$param.opt}, which is $10^1$. This \texttt{lambda} value equals the penalty value which will give the lowest misclassification rate in the cross-validation. One of the advantages of using splines to handle nonlinear prediction is the possibility to show the effect of a variable by plotting its estimated transformation. Figure~\ref{fig:splines} shows these plots of the splines per variable, which can be used for interpretation of the effects of each individual variable. In this figure, one can clearly see nonlinear effects in most variables. For example, the  \textit{diabetes pedigree} (\code{x7}) shows a positive relation with respect to female patients with \code{positive} results, but with a diminishing returns to scale. On the other hand, \textit{Age} (\code{x8}) has a reverse \textit{v}-shape: respondents who are around 40 are more likely to have diabetes. Overall, \textit{glucose concentration} (\code{x2}) and \textit{BMI} (\code{x6}) have the largest effect on the class prediction when its values are large.
+
+\subsubsection{Kernel}
+Another way of implementing nonlinearity in the model by using a kernel. In this example, we will use the Radial Basis Function in our model training. To find the optimal $\lambda$ and $\sigma$ values we performed a five fold cross validation with the grids: $\lambda = 10^{-6} , 10^{-5} ...10^4 , 10^5 , 10^6$ and $\sigma = 2^{-5} , 2^{-4} ... 2^4 , 2^5$ by the following commands.
+
+%---------------------------
+%GRAPHICS: SPLINES
+%---------------------------
+\begin{figure}[!ht]\begin{center}
+\SweaveOpts{width=12, height=18}
+<<splineweightsplot, fig=TRUE, echo=FALSE, width = 12, height = 18>>=
+plotWeights(model.spline)
+@
+\caption{The spline plots of each of 8 variables used to predict the result of a test for diabetes among females of Pima Indian heritages. This model has been performed with \texttt{lambda =} $10$ and the spline basis with 5 inner knots and a degree of 2. Each graph denotes the loss term of the corresponding variable with different values. The higher the predicted value $\tilde{q}$, the higher the probability of positive test.}\label{fig:splines}
+\end{center}\end{figure}
+
+<<svmmajcrossval kernel example>>=
+library(kernlab)
+results.kernel <- svmmajcrossval(
+  diabetes.tr$X, diabetes.tr$y,
+  scale = "interval", 
+  search.grid = list(
+    kernel.sigma = 2^seq(-4, 4, by = 2),
+    lambda = 10^seq(-4, 4, by = 2)
+  ), hinge = "quadratic", kernel = rbfdot,
+  weights.obs = list(positive = 2, negative = 1),
+  options = list(convergence = 1e-4))
+model.kernel <- svmmaj(
+  diabetes.tr$X, diabetes.tr$y,
+  scale = "interval", lambda = results.kernel$param.opt$lambda,
+  kernel.sigma = results.kernel$param.opt$kernel.sigma,
+  kernel = rbfdot, hinge = "quadratic",
+  weights.obs = list(positive = 2, negative = 1))
+predict(
+  model.kernel, diabetes.te$X, diabetes.te$y,
+  weights = list(positive = 2, negative = 1))
+@
+
+%The optimal parameter values for the kernel model are: \texttt{lambda=}$10^0$ and \texttt{sigma=}$2^0$.
+
+Observing the prediction results, we can see that the model using I-splines has a higher TP-value of female persons having \code{positive} result in diabetes as well as the hit rate (average TP-value) suggesting that for these data the I-spline transformation is better able to pick up the nonlinearities in the predictor variables than the radial basis kernel.
+
+\section{Discussion}\label{Sect:Discussion}
+This paper introduces the \proglang{R}-package \pkg{SVMMaj}, This package implements the \pkg{SVM-Maj} algorithm of \citep{Groenen_etal2007,groenen2008} with the addition of nonlinear models with kernels. One of the advantages of the \pkg{SVM-Maj} approach is the competitively fast training speed for medium sized problems. Furthermore, it allows individual objects in a training dataset to receive different individual weight.
+
+Another advantage of \pkg{SVM-Maj} is the possibility to use different loss functions, besides the commonly used absolute hinge. In this package, the absolute hinge, quadratic hinge and Huber hinge has been implemented. Nevertheless, this can be expanded to any other error function $f(q)$ that satisfies the following condition: the second derivative of its function has a bounded maximum, so that a quadratic majorization function can be found. If in addition $f(q)$ is convex, then the overall loss function (\ref{eqn:svmmaj}) is strictly convex, so that the the \pkg{SVM-Maj} algorithm is guaranteed to stop at the global minimum.
+
+\appendix
+%%%%===============================================
+%%%%===============================================
+%%%%
+%%%%                APPENDIX
+%%%%
+%%%%===============================================
+%%%%===============================================
+\section[Efficent updates for SVMMaj]{Efficient updates for \pkg{SVM-Maj}}\label{Sect:Appendix}
+Recall that the relationship between $\bq$ and $\bbeta$ can be written as
+\begin{equation}\label{eqn:qXb}
+	\bq=\bX\bbeta.
+\end{equation}
+In some situations, different values of $\bbeta$ may lead to the same $\bq$, when deriving $\bq$ from $\bbeta$. In other situations, the opposite could happen, that is, several values of $\bq$ may result into the same $\bbeta$ value. Thus, there is not always a one-to-one mapping of $\bq$ to $\bbeta$ and the reverse. Therefore, one should take these possible situations into account when performing iterative majorization.
+To illustrate this, we will use the singular value decomposition (SVD) of $\bX$:
+%=====================================
+% X = P L Q
+%=====================================
+	\begin{equation}\label{eqn:XPLQ}\begin{array}{ccccc}
+		\bX             & = &     \bP       &   \bL       &   \bQ^\top,\\
+		(n\times k)     &   &  (n\times r)  & (r\times r) & (r\times k)
+	\end{array}\end{equation}
+where $\bP$ and $\bQ$ are orthonomal matrices which satisfy $\bP^\top\bP = \bI$ and $\bQ^\top\bQ=\bI$ and $\bL$ is a diagonal matrix. The relationship between $\bq$ and $\bbeta$ can then be written as:
+%====================================
+% P'q = L Q' beta
+%====================================
+	\begin{equation}
+		\bq     = \bX \bbeta = \bP\bL\bQ^\top\bbeta,
+	\end{equation}
+	\begin{equation}\label{eqn:PqQb}
+		\begin{array}{cccc}
+			\bP^\top   \bq         & = &  \bL        &  \bQ^\top  \bbeta.\\
+			(r\times 1) 			 &   & (r\times r) & (r\times 1)
+	\end{array}\end{equation}
+Let us first examine the left part of the equation. $\bq$ can be written as a combination of two orthogonal vectors, a projection of $\bq$ on $\bP$ and a projection on its complement $(\bI - \bP\bP^\top)$, that is,
+%================================
+%q = PP'q + (I-PP')q = qB + qN
+%================================
+	\begin{equation}
+		\bq = \bP\bP^\top\bq + (\bI - \bP\bP^\top)\bq = \bq_B + \bq_N.
+	\end{equation}
+Multiplying both sides with $\bP^\top$ gives
+%==================
+%P'q = P'qB
+%==================
+	\begin{align*}
+ 		\bP^\top\bq & =  \bP^\top(\bq_B + \bq_N) \\
+     	      	& =  \bP^\top\bq_B + \bP^\top(\bI - \bP\bP^\top)\bq \\
+          		& =  \bP^\top\bq_B + (\bP^\top - \bP^\top)\bq \\
+          		& =  \bP^\top\bq_B + \textbf{0} \\
+          		& =  \bP^\top\bq_B.
+	\end{align*}
+In other words, the left part of (\ref{eqn:PqQb}) is only dependent of $\bq_B$. When $r=n$, $\bP\bP^\top$ equals $\bI$ and thus, $\bq = \bq_B + \bq_N= \bq_B + (\bI - \bI)\bq = \bq_B$. In this case there is always an unique solution of
+	\begin{equation}\label{eqn:Pqtheta}
+ 			\bP^\top\bq = \bL\btheta, \textrm{for any } \btheta\in\Re^r.
+	\end{equation}
+
+However, when $r<n$, $\bP\bP^\top=\bI$ does not hold and there are infinitely many solutions to (\ref{eqn:Pqtheta}) so that an one-to-one relationship of $\bq$ and $\bbeta$ in (\ref{eqn:qXb}) is lost indeed.
+
+Similarly, $\bbeta$ can be written as $\bbeta = \bQ\bQ^\top\bbeta + (\bI - \bQ\bQ^\top)\bbeta = \bbeta_B + \bbeta_N$, and $\bQ^\top\bbeta = \bQ^\top(\bbeta_B + \bbeta_N) = \bQ^\top\bbeta_B$. If $r<k$ then there is no unique solution to $\bQ^\top\bbeta = \btheta$ with $\btheta\in\Re^r$. Note that $\bbeta_B$ and $\bbeta_N$ are independent to each other and that
+%==========================
+%betaN'betaB = 0
+%==========================
+	\begin{equation}
+			\bbeta_N^\top\bbeta_B = \bbeta_B^\top\bbeta_N = \bbeta^\top (\bQ\bQ^\top) (\bI-\bQ\bQ^\top)\bbeta = 0,
+	\end{equation}
+as $\bQ\bQ^\top(\bI - \bQ\bQ^\top) = \bz$.
+
+As a result, we have to take care that a proper relation between $\bbeta$ and $\bq$ is retained, when more efficient updates are derived. In the next section, we will examine three different situations and introduce the optimization method by optimizing the parameters which has the lowest dimension, that is, $\min(r,n,k)$. In this way, it can be assured that $\bq_N$ and $\bbeta_N$ are both zero vectors. Subsequently, we will discuss the use of each optimization method in each situation.
+
+%
+%%=================
+%%Algorithm
+%%=================
+%\begin{algorithm}[t]
+%  %\SetKwFor{ElseIf}{else if}{then}{end}
+%  %\SetKwIf{If}{ElseIf}{Else}{if}{then}{else if}{else}{endif}
+%  \SetKwInOut{Input}{input}
+%  \SetKwInOut{Output}{output}
+%  \SetKwComment{Comment}{Comment:}{}
+%
+%  \SetAlgoLined
+%
+%  \TitleOfAlgo{~SVM-Maj}
+%  \Input{$\mathbf y = n \times 1 $ vector with class labels $+1$ and $-1$ , \\
+%        $\mathbf X = n \times k $ matrix of explanatory variables ,\\
+%        $\lambda >0 $ the penalty parameter, \\
+%        \textit{Hinge}= \{absolute,quadratic,huber\} the hinge error function, \\
+%        $\delta >0 $ the Huber hinge parameter}
+%  \Output{$\alpha_t$, ($\bbeta_t$, $\bq_t$ or $\btheta_t$)}
+%  \BlankLine
+%  $t = 0$\;
+%  Set $\epsilon$ to a small positive value\;
+%  Compute rank $r=rank(\bX)$;
+%  \Comment{Set Method};
+%  \uIf{$r = k$ and $n \geq k$}{
+%    Method = $\bbeta$;}
+%  \uElseIf{$r = n$ and $ n \leq k$}{
+%    Method = $\bq$;}
+%  \ElseIf{ $r < \min(n,k)$}{
+%    Method = $\btheta$;}
+%  Set $\bbeta_0$ (or $\bq_0$ or $\btheta_0$) and $\alpha_0$ to random initial values\;
+%
+%  Compute $L_{\mathrm{SVM}}(\alpha_0,\bbeta_0)$ according to Table \ref{tab:lossfunction}\;
+%  \While{$t=0$ or $(L_{t-1}-L_{\mathrm{SVM}}(\alpha_t,\bbeta_t))/L_{\mathrm{SVM}}(\alpha_t,\bbeta_t) >\epsilon$}
+%  {
+%    $t=t+1$\;
+%    $L_{t-1}=L_{\mathrm{SVM}}(\alpha_{t-1},\bbeta_{t-1})$\;
+%    \Comment{Compute $\bA$ and $\bb$ for different hinge errors}
+%    Compute $a_i$ and $b_i$ by Table \ref{tab:maj:abc};
+%
+%    Make the diagonal $\bA$ with elements $a_i$;
+%    \Comment{Compute update}
+%
+%    \uIf{Method = $\bbeta$}{
+%    	Find $\alpha_t$ and $\bbeta_t$ that solves (\protect{\ref{eqn:update:beta}}):
+%    			$  \left( \widetilde{\bX}'\bA\widetilde{\bX} + \lambda\textbf{J} \right)
+%              \begin{bmatrix} \alpha_t \\ \bbeta_t \end{bmatrix}
+%                 =  \widetilde{\bX}'\bb$;}
+%    \uElseIf{Method = $\bq$} {
+%    	Find $\alpha_t$ and $\bq_t$ that solves (\protect{\ref{eqn:update:q}}):
+%    			$(\tilde{\bI}'\bA\tilde{\bI} + \lambda\textbf{L})
+%            \begin{bmatrix} \alpha_t \\ \bq_t \end{bmatrix}
+%            = \tilde{\bI}'\bb$ ;}
+%    \ElseIf{Method = $\btheta$} {
+%    	Find $\alpha_t$ and $\btheta_t$ that solves (\protect{\ref{eqn:update:theta}}):
+%    		$ (\widetilde{\bP}'\bA\widetilde{\bP} + \lambda\textbf{J})
+%           \begin{bmatrix} \alpha_t \\ \btheta_t \end{bmatrix}
+%          = \widetilde{\bP}'\bb$;}
+%  }
+%    \caption{The SVM majorization algorithm SVM-Maj.}\label{fig:Alg}
+%\end{algorithm}
+ 							
+
+\subsection[Beta]{$\bbeta$-method: Full rank and more objects than variables ($n>k$ and $r=k$)}
+
+When the number of variables is smaller than the number of objects,
+and if $\bX$ is of full rank, then $\bQ\bQ^\top=\bI$ and each $\bbeta$ will give an unique $\bq$. As $\dim(\bbeta)<\dim(\bq)$, it is most efficient to optimize the loss function through $\bbeta$. The majorization function can as follows be written as a function of $\bbeta$.
+
+\begin{equation}\label{eqn:majbeta}
+	\textrm{Maj}(\bbeta,\alpha) = (\alpha\bo + \bX\bbeta)^\top\bA(\alpha\bo + \bX\bbeta) - 2 (\alpha\bo + \bX\bbeta)^\top\bb + \lambda\bbeta^\top\bbeta + o.
+\end{equation}
+
+\noindent To derive an update, we set the first derivatives of (\ref{eqn:majbeta}) with respect to  $\bbeta$ and $\alpha$ to zero, which yields
+\begin{align*}
+  \bo^\top\bA(\bo\alpha + \bX\bbeta)                 & =  \bo^\top\bb \\
+  \bX^\top\bA(\bo\alpha + \bX\bbeta) + \lambda\bbeta & =  \bX^\top\bb,
+\end{align*}
+or in matrix form,
+\begin{equation*}
+ \begin{bmatrix} \bo^\top\bA\bo & \bo^\top\bA\bX \\
+                 \bX^\top\bA\bo & \bX^\top\bA\bX+\lambda\bI \end{bmatrix}
+ \begin{bmatrix} \alpha \\ \bbeta \end{bmatrix} =
+ \begin{bmatrix} \bo^\top\bb \\ \bX^\top\bb \end{bmatrix}.
+\end{equation*}
+Using the fact that $\alpha_0\bo + \bX\bbeta = \begin{bmatrix}\bo   & \bX     \end{bmatrix}
+                                             \begin{bmatrix}\alpha \\ \bbeta \end{bmatrix}$,
+an update of both $\bbeta$ and $\alpha_0$ can be derived by solving the linear system
+\begin{equation*}
+\left(\begin{bmatrix} \bo^\top \\ \bX^\top \end{bmatrix} \bA
+  \begin{bmatrix}\bo  &  \bX  \end{bmatrix} + \lambda
+  \begin{bmatrix} 0         &  \textbf{0}^\top\\
+                 \textbf{0} &  \bI         \end{bmatrix}\right)
+  \begin{bmatrix} \alpha^+ \\ \bbeta^+ \end{bmatrix} =
+  \begin{bmatrix} \bo^\top\bb \\ \bX^\top\bb \end{bmatrix},
+\end{equation*}
+or, in compact form
+\begin{equation}
+  \left( \widetilde{\bX}^\top\bA\widetilde{\bX} + \lambda\textbf{J} \right)
+  \begin{bmatrix} \alpha^+ \\ \bbeta^+ \end{bmatrix}
+   =
+  \tilde{\bX}^\top\bb,
+  \label{eqn:update:beta}
+\end{equation}
+where $\widetilde{\bX} = \begin{bmatrix} \bo & \bX \end{bmatrix}$ and
+$\textbf{J} = \begin{bmatrix} 0 & \textbf{0}^\top\\ \textbf{0} & \bI\end{bmatrix}$.
+
+
+To prove that the the linear system (\ref{eqn:update:beta}) has a unique solution under the assumption that $\bX\neq \mathbf{0}$, we will show that the matrix
+$\widetilde{\bX}^\top\bA\widetilde{\bX} + \lambda\textbf{J}$ is positive definite. Let us examine the following equation
+
+\begin{align}\label{eqn:posdef:beta}
+    { \begin{bmatrix} \alpha & \bbeta^\top \end{bmatrix}
+      \left( \widetilde{\bX}^\top\bA\widetilde{\bX} + \lambda\textbf{J} \right)
+      \begin{bmatrix} \alpha \\ \bbeta^\top \end{bmatrix} } &=
+  \begin{bmatrix} \alpha & \bbeta \end{bmatrix}
+      \widetilde{\bX}^\top\bA\widetilde{\bX}
+      \begin{bmatrix} \alpha \\ \bbeta \end{bmatrix}
+  + \lambda
+  \begin{bmatrix} \alpha & \bbeta^\top \end{bmatrix}
+      \textbf{J} \begin{bmatrix} \alpha \\ \bbeta \end{bmatrix} \\
+  &=
+  \left(\alpha\bo + \bX\bbeta\right)^\top\bA\left(\alpha\bo + \bX\bbeta\right) + \lambda\bbeta^\top\bbeta.\nonumber
+\end{align}
+From this equation, we can see that (\ref{eqn:posdef:beta}) equals the sum of two positive values. Furthermore, the right part $\lambda\bbeta^\top\bbeta$ of the equation equals zero only if $\bbeta = \textbf{0}$, whereas the left part will be zero only when
+$\left(\alpha\bo + \bX\bbeta\right)=\textbf{0}$. As both equations only hold when $\alpha=0$ and $\bbeta=\textbf{0}$, we know that the matrix $\widetilde{\bX}^\top\bA\widetilde{\bX} + \lambda\textbf{J}$ is positive definite.
+
+An update of $\bq$ can be calculated by $\bq^+ = \bX\bbeta^+$. Note that $\bq_N$ necessarily equals zero, as
+\begin{equation*}
+	\bq_N = (\bI - \bP\bP^\top)\bq = (\bI - \bP\bP^\top)\bP\bL\bQ^\top\bbeta
+				= (\bP - \bP\bP^\top\bP)\bL\bQ^\top\bbeta = \textbf{0}.
+\end{equation*}
+
+
+\subsection[q]{$\bq$-method: Full rank and less objects than variables ($n<k$ and $r=n$)}
+
+When $k>n$, or more general $k>r$, we know that there are no unique solutions to $\bq = \bX\bbeta$ and that $\bX\bbeta = \bX(\bbeta_B + \bbeta_N) = \bX\bbeta_B$, that is, $\bq$ is not dependent of $\bbeta_N$. Consider the penalty term $\lambda \bbeta^\top\bbeta$. As $\bQ\bQ^\top(\bI - \bQ\bQ^\top) = \textbf{0}$, the penalty term can be simplified as
+%================================================================
+%lambda beta'beta = lambda betaB' betaB + lambda betaN' betaN
+%================================================================
+\begin{equation*}
+	\lambda \bbeta^\top\bbeta = \lambda (\bbeta_B + \bbeta_N)^\top(\bbeta_B + \bbeta_N)
+				= \lambda\bbeta_B^\top\bbeta_B + \lambda\bbeta_N^\top\bbeta_N
+\end{equation*}
+Moreover, as $\lambda \bbeta_N^\top\bbeta_N \geq 0$ and $\bq$ does not depend on $\bbeta_N$, $\bbeta_N$ can be set to zero, with the result that $\bbeta = \bbeta_B$.
+Nevertheless, when the number of variables $k$ is larger than the number of objects
+$n$, and when $\bX$ is of full rank, that is $r=k$, then $\bP\bP^\top=\bI$ and
+each $\bq$ will give an unique $\bbeta$. As $\dim(\bq)<\dim(\bbeta)$,
+it is most efficient to optimize the loss function through $\bq$. $\bbeta$ can then be derived using (\ref{eqn:PqQb}), that is,
+%=============================================
+%beta = Q /L P' q = X /(XX') q
+%=============================================
+\begin{equation*}
+	\bbeta = \bQ\bL^{-1}\bP^\top\bq = \bQ\bL\bP^\top\bP\bL^{-2}\bP^\top\bq = \bX^\top (\bX\bX^\top)^{-1}\bq,
+\end{equation*}
+using the fact that $(\bX\bX^\top)(\bP\bL^{-2}\bP^\top)(\bX\bX^\top) = (\bP\bL^2\bP)(\bP\bL^{-2}\bP^\top)(\bP\bL^2\bP) = (\bP\bL^2\bP)$. Note that $\bbeta$ does not depend on $\bq_N$, as $\bbeta = \bQ\bL^{-1}\bP^\top\bq = \bQ\bL^{-1}\bP^\top\bq_B$. The penalty term $\lambda \bbeta^\top\bbeta$ can then be written as
+%=======================================
+%lambda beta'beta = lambda q'/K q
+%=======================================
+\begin{align*}
+    \lambda\bbeta^\top\bbeta
+    & =  \lambda (\bX^\top (\bX\bX^\top)^{-1} \bq)^\top(\bX^\top (\bX\bX^\top)^{-1} \bq) \\
+    & =  \lambda\bq^\top (\bX\bX^\top)^{-1} \bX\bX^\top(\bX\bX^\top)^{-1} \bq
+      = \lambda\bq^\top(\bX\bX^\top)^{-1}\bq = \lambda\bq^\top\bK^{-1}\bq,
+\end{align*}
+where $\bK = \bX\bX^\top = \bP\bL^2\bP^\top$.
+
+Therefore, the majorization function can as follows be written as a function of $\bq$.
+\begin{equation}\label{eqn:maj:q}
+\textrm{Maj}(\bbeta,\alpha)=(\alpha\bo + \bq)^\top\bA(\alpha\bo + \bq) - 2 (\alpha\bo + \bq)^\top\bb + \lambda \bq^\top\bK^{-1}\bq.
+\end{equation}
+
+The first-order conditions of (\ref{eqn:maj:q}) are
+\begin{align*}
+  \bo^\top\bA(\bo\alpha + \bq)                      & =  \bo^\top\bb,\\
+      \bA(\bo\alpha + \bq) + \lambda\bK^{-1}\bq & =  \bb.
+\end{align*}
+Using $\begin{bmatrix}\bo    & \bI\end{bmatrix}
+       \begin{bmatrix}\alpha & \bq\end{bmatrix} =
+       \bo\alpha + \bq = \tilde{\bq}$, the parameters $\bq$ and $\alpha$ can be updated by deriving
+\begin{equation*}
+  \left(\begin{bmatrix} \bo^\top \\ \bI \end{bmatrix} \bA
+        \begin{bmatrix} \bo  &  \bI \end{bmatrix} +  \lambda
+        \begin{bmatrix} 0    &  \textbf{0}^\top \\
+                 \textbf{0}  &  \bK^{-1} \end{bmatrix} \right)
+   \begin{bmatrix} \alpha^+ \\ \bq^+ \end{bmatrix} =
+   \begin{bmatrix} \bo^\top\bb \\ \bb \end{bmatrix},
+\end{equation*}
+or, in compact form
+%============================
+% I'AI + lambda L ~q = ~I'b
+%============================
+\begin{equation}
+  (\tilde{\bI}^\top\bA\tilde{\bI} + \lambda\textbf{L})
+  \begin{bmatrix}  \alpha^+ \\ \bq^+ \end{bmatrix}
+  = \tilde{\bI}^\top\bb,
+  \label{eqn:update:q}
+\end{equation}
+where $\tilde{\bI} = \begin{bmatrix}\bo & \bI \end{bmatrix}$ and
+$\textbf{L} = \begin{bmatrix} 0 & \textbf{0}^\top\\ \textbf{0} & \bK^{-1} \end{bmatrix}$.
+
+Similar to (\ref{eqn:update:beta}), we can show that $(\tilde{\bI}^\top\bA\tilde{\bI} + \lambda\textbf{L})$ is positive definite and thus (\ref{eqn:update:q}) can always be solved.
+
+Also, the corresponding update for $\bbeta$, which is
+\begin{equation}\label{eqn:q2beta}
+	\bbeta^+ = \bQ\bL^{-1}\bP^\top\bq = \bX (\bX\bX^\top)^{-1}\bq,
+\end{equation}
+equals $\bbeta_B$, as
+\begin{equation*}
+	\bbeta_N = (\bI - \bQ\bQ^\top)\bbeta
+			= (\bI - \bQ\bQ^\top)\bQ\bL^{-1}\bP^\top\bq
+			= (\bQ - \bQ\bQ^\top\bQ)\bL^{-1}\bP^\top\bq
+			= \bz.
+\end{equation*}
+
+
+\subsection[Method of decomposition]{$\btheta$-method: Rank is smaller than either $n$ or $k$ ($r<$min$(n,k)$)}
+\label{Sect:update:decomposition}
+
+When $r < \min(n,k)$, the interdependence of $\bq$ and $\bX$ can be summarized in an $r\times 1$ vector $\btheta = \bQ^\top\bbeta = \bL^{-1}\bP^\top\bq$ from (\ref{eqn:PqQb}). As $\bq_N$ and $\bbeta_N$ are not of interest, it is efficient to optimize the loss function by $\btheta$. $\bbeta$ will then be calculated through $\bbeta = \bQ\btheta$, which will assure that $\bbeta = \bQ\btheta = \bQ\bQ^\top\bbeta=\bbeta_B$, in a similar way, it can be shown that $\bq=\bq_B$. Using the fact that $\bq = \bX\bbeta = \bP\bL\bQ^\top\bbeta = \bP\bL\btheta$ and $\btheta^\top\btheta = \bbeta^\top\bQ\bQ^\top\bbeta = \bbeta_B^\top\bbeta_B = \bbeta^\top\bbeta$, the majorization function can be written as
+\begin{equation}
+	\textrm{Maj}(\bbeta,\alpha) = (\alpha\bo + \bP\bL\btheta)^\top\bA(\alpha\bo + \bP\bL\btheta) - 2 (\alpha\bo + \bP\bL\btheta)^\top\bb + \lambda\btheta^\top\btheta,
+\end{equation}
+with the first-order condition
+\begin{align*}
+  \bo^\top   \bA(\bo\alpha + \bP\bL\btheta)                     & =  \bo^\top\bb\\
+  \bL\bP^\top\bA(\bo\alpha + \bP\bL\btheta) + \lambda\bI\btheta & =  \bL\bP^\top\bb.
+\end{align*}
+Using $\begin{bmatrix}\bo      & \bP\bL\end{bmatrix}
+       \begin{bmatrix} \alpha & \btheta\end{bmatrix} =
+       \bo\alpha_0 + \bP\bL\btheta = \tilde{\bq}$, the parameters $\btheta$ and $\alpha_0$ can be updated by deriving
+\begin{equation*}
+  \left(\begin{bmatrix} \bo^\top \\ \bL\bP^\top \end{bmatrix} \bA
+   \begin{bmatrix}\bo  &  \bP\bL \end{bmatrix} +  \lambda
+   \begin{bmatrix} 0           &  \textbf{0}^\top \\
+                           \textbf{0}  &  \bI \end{bmatrix} \right)
+   \begin{bmatrix} \alpha^+ \\ \btheta^+ \end{bmatrix} =
+   \begin{bmatrix} \bo^\top\bb \\ \bL\bP^\top\bb \end{bmatrix},
+\end{equation*}
+or, in compact form
+\begin{equation}
+ (\widetilde{\bP}^\top\bA\widetilde{\bP} + \lambda\textbf{J})
+ \begin{bmatrix} \alpha^+ \\ \btheta^+ \end{bmatrix}
+ = \widetilde{\bP}^\top\bb,
+ \label{eqn:update:theta}
+\end{equation}
+where $\widetilde{\bP} = \begin{bmatrix} \bo & \bP\bL \end{bmatrix}$.
+
+The advantage of this method is that $r \leq \min(n,k)$, which means that it restricts to the space of which the relationship between $\bq$ and $\bbeta$  is described. Moreover, it is assured that the dimension of $\btheta$ is the lowest of three (that is, $r \leq \min(n,k)$), and thus it is most efficient and consistent algorithm. However, this method requires the SVD or the QR decomposition to be computed, which may need much computational time in case $n$ and $k$ are large. Therefore, one should consider the alternatives when the matrix $\bX$ is of full rank, that is when $r = \min(n,k)$.
+
+\bibliography{References}
+\end{document}

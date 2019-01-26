@@ -136,7 +136,7 @@ svmmaj <- function(
 
 #' @rdname svmmaj
 #' @importFrom stats na.omit
-#' @importFrom stats update
+#' @importFrom stats update.default
 #' @importFrom kernlab vanilladot
 #' @importFrom kernlab rbfdot
 #' @importFrom kernlab polydot
@@ -340,7 +340,7 @@ svmmaj.default <- function(
     q     	 <- drop(Z %*% theta)
     
     #CALCULATE LOSS FUNCTION VALUE OF GIVEN POINT
-    major.hinge  <- update(major.hinge)	
+    major.hinge  <- update.default(major.hinge)	
     new.loss     <- sum(major.hinge$loss * w) + lambda * sum(theta[-1] ^ 2)
     
     #PRINT ITERATION STEP

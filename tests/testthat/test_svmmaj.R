@@ -52,7 +52,7 @@ test_that(
     
     ## predicted values are equal
     expect_true(model.chol$method$type != model.svd$method$type)
-    expect_less_than(max(abs(model.svd$q - model.chol$q)), 1e-5)
+    expect_less_than(max(abs(model.svd$q - model.chol$q)), 1e-4)
   }
 )
 

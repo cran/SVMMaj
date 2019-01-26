@@ -13,8 +13,8 @@ svmmaj(X, y, lambda = 1, weights.obs = 1, weights.var = 1,
   spline.degree = 1L, kernel = vanilladot, kernel.sigma = 1,
   kernel.scale = 1, kernel.degree = 1, kernel.offset = 1,
   hinge = c("absolute", "quadratic", "huber", "logitistic"),
-  hinge.delta = 1e-08, options = setSVMoptions(), initial.point = NULL,
-  verbose = FALSE, na.action = na.omit, ...)
+  hinge.delta = 1e-08, options = setSVMoptions(),
+  initial.point = NULL, verbose = FALSE, na.action = na.omit, ...)
 
 \method{svmmaj}{default}(X, y, lambda = 1, weights.obs = 1,
   weights.var = 1, scale = c("interval", "zscore", "none"),

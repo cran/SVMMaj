@@ -209,21 +209,21 @@ svmmajcrossval <- function(
           )
           names(params.extended)[seq_len(ncol(G))] <- params
           
-          new.kernel <- 
-            !(j > 1 && isTRUE(all.equal(unlist(G[j, param.Z]), 
-                                        unlist(G[j - 1, param.Z]))))
+          new.kernel <- TRUE
+          #  !(j > 1 && isTRUE(all.equal(unlist(G[j, param.Z]), 
+          #                              unlist(G[j - 1, param.Z]))))
           
           if(!new.kernel) {
             params_other <- setdiff(names(params.extended), param.kernel)
-            formals(svmmaj.fun)[params_other]     <-  params.extended[params_other]
-            formals(svmmaj.fun)$scale             <-  'none'
+            formals(svmmaj.fun)[params_other]     <- params.extended[params_other]
+            formals(svmmaj.fun)$scale             <- 'none'
             options.kernel                        <- options.old.kernel
             
             Z_i = outputs$method$Z
             y_i = y[groups != i]
             
           } else {
-            formals(svmmaj.fun)[names(params.extended)]  <-  params.extended
+            formals(svmmaj.fun)[names(params.extended)]  <- params.extended
             options.kernel                               <- options
             Z_i = X[groups != i, ]
             y_i = y[groups != i]
@@ -237,6 +237,7 @@ svmmajcrossval <- function(
           )
           
           if(new.kernel) Z_ni = X[groups == i | i == 0,]
+          # if(new.kernel) Z_ni = X.svmmaj(outputs, X[groups == i | i == 0,])
           
           #Predict out-of-sample
           qhat[[j]]    <-  predict.svmmaj(
@@ -245,8 +246,6 @@ svmmajcrossval <- function(
             weights = w[groups == i | i == 0]
           )
           
-          if(new.kernel) Z_ni = X.svmmaj(outputs, X[groups == i | i == 0,])
-
           #Calculating number of correctly predicted objects
           lMat[j] <- sum(w[groups == i | i == 0] * 
                            (qhat[[j]] * y[groups == i | i == 0] < 0)) / sum(w)

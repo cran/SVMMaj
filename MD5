@@ -1,4 +1,4 @@
-8d14ffbca2e25367fbf09db708ab29f2 *DESCRIPTION
+f39901f7d045fc978c4bfe9df7b422e8 *DESCRIPTION
 aefd1aef6344318af97c1e6b7741ff66 *NAMESPACE
 de1db21602a0cf1457c27543b23cf3e0 *R/classification.R
 ee419ae52fa5cd500cf96606bc71717c *R/data.R
@@ -13,14 +13,14 @@ cea1196505a7b2a2f4c7324f6ee06cd6 *R/roccurve.R
 1577c142d992bdee672c17d551fcb15e *R/svmmajcrossval.R
 997e628b1cbebf3edf1b3b72385ee394 *R/update.R
 51fa69dcff4f04eab385e6fccb12e4b9 *README.md
-07cf94ee352e3d0758df1907799334e6 *build/vignette.rds
-47e440ae40a83d47fdf636ff528baa47 *data/AusCredit.r
-70f99a9679877eae5312c36757c09a1a *data/diabetes.r
-7008760f63a4bd967d6ee1653449af0e *data/supermarket1996.RData
-c64ec360962cfb804688c59436ab0f55 *data/voting.r
+820fe3cbd7ea1221a8d10c6cab7de681 *build/vignette.rds
+93bb172e37f62b1cd65561c25d8a3d48 *data/AusCredit.rda
+3e3d9ba9bc14de68668766ebf34e8b8a *data/diabetes.rda
+c66eb0a12225e8ca8e9f050a8f050f58 *data/supermarket1996.RData
+0ba93d835bb508416556e1381bed5b9a *data/voting.rda
 a1b332ef0efa8334c5fc35a076026deb *inst/doc/paper.R
 d09d084dbe5d26d25372a3b49eea105c *inst/doc/paper.Rnw
-74475b1b95148ee01cf953ef874ce628 *inst/doc/paper.pdf
+f3cbe720d40dba1114676ee8afbcea01 *inst/doc/paper.pdf
 b05fcd7e9fc7dab9c3ad5503fe996c88 *man/AusCredit.Rd
 49820ef1d80abadd5498c56c1bf5b979 *man/X.svmmaj.Rd
 76284ced184bfca1287830ba787c2049 *man/auc.Rd

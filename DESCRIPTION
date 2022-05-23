@@ -1,7 +1,7 @@
 Package: SVMMaj
 Type: Package
 Title: Implementation of the SVM-Maj Algorithm
-Version: 0.2.9
+Version: 0.2.9.1
 Date: 2019-01-26
 Author: Hoksan Yip, Patrick J.F. Groenen, Georgi Nalbantov
 Maintainer: Hok San Yip <hoksan@gmail.com>
@@ -18,6 +18,6 @@ LazyData: Yes
 RoxygenNote: 6.1.1
 VignetteBuilder: utils
 NeedsCompilation: no
-Packaged: 2019-01-26 12:55:48 UTC; hoksan
+Packaged: 2022-05-23 07:36:50 UTC; hornik
 Repository: CRAN
-Date/Publication: 2019-01-26 13:10:03 UTC
+Date/Publication: 2022-05-23 08:02:18 UTC

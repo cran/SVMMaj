@@ -54,7 +54,7 @@ plotWeights <- function(object, plotdim = c(3,3), ...){
     Splinessum  <- data.frame(Splinessum)
   }
   
-  
+  plot_pages <- vector(mode='list', length=ceiling(k / nplot))
   for(j in 1:ceiling(k / nplot)){
     #DETERMINE PLOT LAYOUT
     mini <- nplot * (j - 1) + 1
@@ -134,9 +134,9 @@ plotWeights <- function(object, plotdim = c(3,3), ...){
     }
     plot_page <-  plots[mini:maxi]
     plot_page[[length(plot_page) + 1]] <- get_legend()
-    print(do.call(grid.arrange, plot_page))
+    plot_pages[[j]] <- do.call(grid.arrange, plot_page)
   }
-  return(invisible())
+  return(invisible(plot_pages))
 }
 
 get_legend <- function(){

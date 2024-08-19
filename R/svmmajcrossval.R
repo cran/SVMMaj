@@ -195,7 +195,7 @@ svmmajcrossval <- function(
         # look for parameters which influence the kernel matrix
         param.Z <- intersect(param.kernel, params)
         
-        if(is.null(options) || class(options) != 'list')
+        if(is.null(options) || !inherits(options, 'list'))
           options <- setSVMoptions()
         options.old.kernel <- options
         options.old.kernel$decomposition = 'none'        

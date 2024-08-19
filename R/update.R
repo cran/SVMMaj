@@ -9,7 +9,7 @@ getUpdate <- function(X,
   #-------------------------------------------------------------------
   #LINEAR KERNEL: QR-DECOMPOSITION
   # [ X = Z Q' ]
-  if (class(kernel) == 'vanillakernel' & decomposition == 'chol') {
+  if (inherits(kernel, 'vanillakernel') & decomposition == 'chol') {
     RQ   <- qr(t(X))
     
     method <- list(
@@ -20,7 +20,7 @@ getUpdate <- function(X,
       RQ            = RQ,
       decomposition = decomposition
     )
-  } else if (class(kernel) == 'vanillakernel' &
+  } else if (inherits(kernel, 'vanillakernel') &
              decomposition == 'svd') {
     PLQ <- svd(X)
     k   <- NROW(X)
@@ -33,7 +33,7 @@ getUpdate <- function(X,
       PLQ           = PLQ,
       decomposition = decomposition
     )
-  } else if (class(kernel) == 'vanillakernel' &
+  } else if (inherits(kernel, 'vanillakernel') &
              decomposition == 'none') {
     #LINEAR KERNEL: NO DECOMPOSITION
     # [ X = X ]
@@ -46,7 +46,7 @@ getUpdate <- function(X,
       decomposition = decomposition
     )
     
-  } else if (class(kernel) != 'vanillakernel' &
+  } else if (!inherits(kernel, 'vanillakernel') &
              decomposition == 'chol') {
     #NONLINEAR KERNEL: PIVOTED CHOLESKY DECOMPOSITION
     # [ K   = Phi Phi' = Z Z' = P R R' P' ]
@@ -64,7 +64,7 @@ getUpdate <- function(X,
       X    = X,
       Z    = t(Rp[seq_len(r) , order(attr(Rp, 'pivot'))])
     )
-  } else if (class(kernel) != 'vanillakernel' &
+  } else if (!inherits(kernel, 'vanillakernel') &
              decomposition == 'svd') {
     K    <- kernelMatrix(kernel, X)
     PL2P <- eigen(K)

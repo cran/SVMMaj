@@ -4,8 +4,12 @@
 \alias{transformdata}
 \title{Transform the data with normalization and/or spline basis}
 \usage{
-transformdata(x, standardize = c("interval", "zscore", "none"),
-  spline.knots = 0, spline.degree = 1)
+transformdata(
+  x,
+  standardize = c("interval", "zscore", "none"),
+  spline.knots = 0,
+  spline.degree = 1
+)
 }
 \arguments{
 \item{x}{a single column of values as input for the data

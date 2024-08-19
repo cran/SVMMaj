@@ -25,7 +25,7 @@
 \description{
 Trained SVM model as output from \code{\link[SVMMaj]{svmmaj}}. 
 The returning object consist of the following values: 
-\itemize{
+\describe{
   \item{call}{ The function specifications which has been called.}
   \item{lambda}{ The regularization parameter of the penalty 
        term which has been used.} 

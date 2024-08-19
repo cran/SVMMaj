@@ -4,8 +4,7 @@
 \alias{predict.svmmaj}
 \title{Out-of-Sample Prediction from Unseen Data.}
 \usage{
-\method{predict}{svmmaj}(object, X.new, y = NULL, weights = NULL,
-  show.plot = FALSE, ...)
+\method{predict}{svmmaj}(object, X.new, y = NULL, weights = NULL, show.plot = FALSE, ...)
 }
 \arguments{
 \item{object}{Model which has been trained beforehand using

@@ -4,11 +4,21 @@
 \alias{svmmajcrossval}
 \title{k-fold Cross-Validation of SVM-Maj}
 \usage{
-svmmajcrossval(X, y, search.grid = list(lambda = 2^seq(5, -5, length.out
-  = 19)), ..., convergence = 1e-04, weights.obs = 1,
-  check.positive = TRUE, mc.cores = getOption("mc.cores"),
-  options = NULL, verbose = FALSE, ngroup = 5, groups = NULL,
-  return.model = FALSE)
+svmmajcrossval(
+  X,
+  y,
+  search.grid = list(lambda = 2^seq(5, -5, length.out = 19)),
+  ...,
+  convergence = 1e-04,
+  weights.obs = 1,
+  check.positive = TRUE,
+  mc.cores = getOption("mc.cores"),
+  options = NULL,
+  verbose = FALSE,
+  ngroup = 5,
+  groups = NULL,
+  return.model = FALSE
+)
 }
 \arguments{
 \item{X}{A data frame (or object coercible by

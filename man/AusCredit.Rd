@@ -6,7 +6,8 @@
 \alias{AusCredit.te}
 \alias{AusCredit.tr}
 \title{Australian Credit Approval Dataset}
-\format{This data set has been split into two components for the convenience
+\format{
+This data set has been split into two components for the convenience
 of the model training.
 
 \code{data.frame}-object \code{X} consists of with 6 numerical and 8
@@ -19,11 +20,12 @@ or \code{Rejected}
 
 The training set \code{AusCredit.tr} contains a randomly selected set of 400
 subjects, and \code{AusCredit.te} contains the remaining 290 subjects.
-\code{AusCredit} contains all 690 objects.}
+\code{AusCredit} contains all 690 objects.
+}
 \source{
 Chih-Chung Chang and Chih-Jen Lin, LIBSVM : a library for support
 vector machines, 2001.  Software available at
-\url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
+\url{https://www.csie.ntu.edu.tw/~cjlin/libsvm/}.
 }
 \description{
 This file concerns credit card applications of 690 households.

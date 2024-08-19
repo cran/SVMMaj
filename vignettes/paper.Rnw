@@ -1,11 +1,11 @@
+%\VignetteIndexEntry{paper}
+%\VignetteEngine{utils::Sweave}
+
 \documentclass[article,shortnames]{jss}
 \usepackage[boxed]{algorithm2e}\IncMargin{1em}
 \renewcommand\AlCapFnt{\normalfont}
 \usepackage[counterclockwise]{rotating}
 \usepackage{amsmath}
-
-% \VignetteIndexEntry{paper}
-% \VignetteEngine{Sweave}
 
 \title{         
   The Majorization Approach to SVM: The \pkg{SVMMaj} Package in \proglang{R}
@@ -33,7 +33,7 @@ Support Vector Machines (SVMs) have gained considerable popularity over the last
 	Erasmus University Rotterdam\\
 	3062 PA Rotterdam, The Netherlands\\
 	E-mail: \email{groenen@ese.eur.nl}\\
-	URL: \url{http://people.few.eur.nl/groenen}
+	URL: \url{https://people.few.eur.nl/groenen}
 }
 
 %\Volume{1}
@@ -49,7 +49,7 @@ Support Vector Machines (SVMs) have gained considerable popularity over the last
 \SweaveOpts{concordance=FALSE}
 <<R session setup, echo=FALSE>>=
 options(prompt="R> ")
-options(mc.cores = 2)
+options(mc.cores = 1)
 @
 
 %%%%===============================================
@@ -102,7 +102,7 @@ Language               &  \proglang{MATLAB}, \proglang{R} & \proglang{C++},\prog
 
 In this paper, the method of \citet{groenen2008} is enhanced to the use of different kernels, the standard way in the SVM literature for handling nonlinearities in the predictor space. Moreover, we offer here a new special treatment for the case where the number of objects is less than the number of attributes. Three cases are distinguished for which \pkg{SVM-Maj} computes the solution efficiently: (1) the case with many more observations $n$ than variables $k$, (2) the case with many variables $k$ but medium sized $n$, and (3) the case that $n$ is medium sized and the kernel space or the space of the variables is of lower rank than $k$ or $n$. The case of large $n$ is relatively more difficult for all SVM solvers, including \pkg{SVM-Maj}. This particularly holds when kernels are used. For this case, the alternative of introducing nonlinearity through splines in \pkg{SVM-Maj} can be used so that still for medium sized $n$, nonlinearity can be handled efficiently.
 
-Amongst the advantages of the \pkg{SVM-Maj} approach are its intuitive optimization algorithm, its versatility, and the competitively fast estimation speed for medium sized problems. The majorization solver is an iterative algorithm with two easily tractable alternating steps that reveal the nature of solving the SVM optimization problem in an appealing way. The relative simplicity of \pkg{SVM-Maj} arguably makes it intuitively more accessible to the researcher than the state-of-art decomposition methods.  Traditional SVM solvers focus particularly on the absolute-hinge error (the standard SVM error function), whereas the majorization algorithm has been designed to incorporate any well-behaved error function. This property can be viewed as a attractive feature of the majorization approach. The \pkg{SVM-Maj} package comes with the following in-built error functions: the classic absolute-hinge, Huber-hinge, and quadratic hinge. Furthermore, \pkg{SVM-Maj} solves the \emph{primal} SVM optimization problem even in the nonlinear case, in contrast to other solvers, which solve the \emph{dual} problem. The advantage of solving the primal is that \pkg{SVM-Maj} converges to the optimal solution in each iterative step. In contrast, other methods solving the dual optimization problem need the dual problem to be fully converged to attain a solution.
+Among the advantages of the \pkg{SVM-Maj} approach are its intuitive optimization algorithm, its versatility, and the competitively fast estimation speed for medium sized problems. The majorization solver is an iterative algorithm with two easily tractable alternating steps that reveal the nature of solving the SVM optimization problem in an appealing way. The relative simplicity of \pkg{SVM-Maj} arguably makes it intuitively more accessible to the researcher than the state-of-art decomposition methods.  Traditional SVM solvers focus particularly on the absolute-hinge error (the standard SVM error function), whereas the majorization algorithm has been designed to incorporate any well-behaved error function. This property can be viewed as a attractive feature of the majorization approach. The \pkg{SVM-Maj} package comes with the following in-built error functions: the classic absolute-hinge, Huber-hinge, and quadratic hinge. Furthermore, \pkg{SVM-Maj} solves the \emph{primal} SVM optimization problem even in the nonlinear case, in contrast to other solvers, which solve the \emph{dual} problem. The advantage of solving the primal is that \pkg{SVM-Maj} converges to the optimal solution in each iterative step. In contrast, other methods solving the dual optimization problem need the dual problem to be fully converged to attain a solution.
 
 The main aim of this paper is to introduce the \pkg{SVMMaj} package for \proglang{R} \citep{Rprog}. Its main features are: implementation of the \pkg{SVM-Maj} majorization algorithm for SVMs, handling of nonlinearity through splines and kernels, the ability to handle several error functions (among other the classic hinge, quadratic hinge and Huber hinge error).
 
@@ -340,7 +340,6 @@ Before we continue with the discussion of the extended options for the \pkg{SVM-
     $t=t+1$\;
     Compute $a_i$ and $b_i$ by Table~\ref{tab:maj:abc}\;
     Set diagonal elements of $\bA$ to $w_ia_i$ and $\mathbf{b}$ to $w_ib_i$\;
-    \Comment{Compute update}
     \uIf{hinge = absolute \& method = $\boldsymbol\rho$}{
         Find $\alpha_t$ and $\boldsymbol\rho_t$ that solves (\protect{\ref{eqn:update:rho}}):
     			$  \left( \widetilde{\mathbf Z}^\top\mathbf A\widetilde{\mathbf Z} + \lambda\mathbf J \right)
@@ -568,7 +567,7 @@ Parameter & Values & Description\\\hline
 \texttt{spline.degree}
     & integer 	& Degree of the spline basis. Default value is 1, representing the linear case.\\
 \texttt{kernel}
-    & &The kernel function of package \texttt{kernlab}, which specifies which kernel type to be used. Possible kernels and its parameter values are amongst others:\\
+    & &The kernel function of package \texttt{kernlab}, which specifies which kernel type to be used. Possible kernels and its parameter values are among others:\\
     & \texttt{vanilladot}
     & = The linear kernel: \texttt{k(x,x') = <x,x'>}.\\
     & \texttt{polydot}
@@ -627,7 +626,7 @@ performs a cross validation of \texttt{X} and \texttt{y} with as grid points $\l
 As an example, we use the \texttt{AusCredit} data set of the \texttt{libsvm} data sets \citep{lin2001}, which is included in the \pkg{SVMMaj} package. This data set consists of in total 690 credit requests, 307 of which are classified as positive and 383 as negative. These classifications are stored in \texttt{AusCredit\$y}  with class label \texttt{Rejected} to represent the negative responses, and label \texttt{Accepted} for the positive responses. In total, 14 attributes of each applicant has been stored as explanatory variables in \texttt{AusCredit\$X}. Due to confidentiality, the labels of all explanatory variables are not available. Moreover, the observations in the data set \texttt{AusCredit} is split into \texttt{AusCredit.tr}, consisting the first 400 observations, and \texttt{AusCredit.te}, with the remaining 290 observations. \texttt{AusCredit.tr} will be used to estimate the model, while the \texttt{AusCredit.te} is used to analyze the prediction performances.
 \vspace{5 mm}
 
-\noindent\textbf{Example 1} \textit{Train the SVM-model using the data set of Australian credit requests to classify the creditability of the applicant.}
+\noindent\textbf{Example 1} \textit{Train the SVM-model using the data set of Australian credit requests to classify the creditibility of the applicant.}
 
 \noindent The command
 
@@ -708,7 +707,7 @@ y <- factor(qu < 0, levels = c(TRUE, FALSE), labels = model$classes)
 @
 
 \subsection{Cross validation}
-Until now, the default settings have been used. However, it is recommended to experiment with different parameters to obtain an optimal prediction model, in particular by varying the penalty parameter $\lambda$. To determine the optimal parameter values to be used in further analysis, one can use the \texttt{svmmajcrossval} function to perform cross validation with different parameter values. To show an example of using cross validation to determine $\lambda$, consider the \texttt{voting} data set the \texttt{libsvm} data sets \citep{lin2001}. This data set corresponds with 434 members of the U.S. House of Representatives Congressmen consisting of 167 republicans and 267 democrats. As the explanatory variables, for each of the 16 different political propositions, the votes of the politicians are registered. Using the SVM, we are trying to predict the political wing of the last 134 members using their 16 votes on the propositions as predictor variables. The first 300 members are used as a training sample. A five-fold cross validation is performed on these 300 members in the training sample, with a fine grid of lambda values $\lambda = 10^{-6} , 10^{-5.5}, \ldots,10^5 , 10^{5.5} , 10^6$. Amongst these lambda values, the optimal $\lambda$ value is the one which results in the lowest misclassification rate.
+Until now, the default settings have been used. However, it is recommended to experiment with different parameters to obtain an optimal prediction model, in particular by varying the penalty parameter $\lambda$. To determine the optimal parameter values to be used in further analysis, one can use the \texttt{svmmajcrossval} function to perform cross validation with different parameter values. To show an example of using cross validation to determine $\lambda$, consider the \texttt{voting} data set the \texttt{libsvm} data sets \citep{lin2001}. This data set corresponds with 434 members of the U.S. House of Representatives Congressmen consisting of 167 republicans and 267 democrats. As the explanatory variables, for each of the 16 different political propositions, the votes of the politicians are registered. Using the SVM, we are trying to predict the political wing of the last 134 members using their 16 votes on the propositions as predictor variables. The first 300 members are used as a training sample. A five-fold cross validation is performed on these 300 members in the training sample, with a fine grid of lambda values $\lambda = 10^{-6} , 10^{-5.5}, \ldots,10^5 , 10^{5.5} , 10^6$. Among these lambda values, the optimal $\lambda$ value is the one which results in the lowest misclassification rate.
 
 \vspace{5mm}
 
@@ -719,7 +718,7 @@ library("SVMMaj")
 @
 
 \noindent
-In this example, we will use the data in \texttt{voting.tr} to perform fivefold-cross validation to determine the optimal \texttt{lambda}. Then, this \texttt{lambda} is used in an SVM analysis on the entire data set \texttt{voting.tr}. Subsequently, this model is used to predict the classification of the unseen sample \texttt{voting.te}. Then, \texttt{voting.te\$X} can be used to compare the prediction with the actual classification \texttt{voting.te\$y}. This procedure can be executed in R using the following commands:
+In this example, we will use the data in \texttt{voting.tr} to perform five-fold cross validation to determine the optimal \texttt{lambda}. Then, this \texttt{lambda} is used in an SVM analysis on the entire data set \texttt{voting.tr}. Subsequently, this model is used to predict the classification of the unseen sample \texttt{voting.te}. Then, \texttt{voting.te\$X} can be used to compare the prediction with the actual classification \texttt{voting.te\$y}. This procedure can be executed in R using the following commands:
 
 
 <<svmmajcrossval absolute hinge example>>=
@@ -768,13 +767,13 @@ grid.arrange(
   ncol = 2
 )
 @
-\caption{The function \texttt{svmmajcrossval} performs a fivefold cross validation of different \texttt{lambda} values of both absolute hinge (left panel) and the quadratic hinge (right panel). This figure shows the misclassification rate of different \texttt{lambda} values.}\label{fig:hingecv}
+\caption{The function \texttt{svmmajcrossval} performs a five-fold cross validation of different \texttt{lambda} values of both absolute hinge (left panel) and the quadratic hinge (right panel). This figure shows the misclassification rate of different \texttt{lambda} values.}\label{fig:hingecv}
 \end{center}\end{figure}
 
 %------------------------------
 %TABLE: PERFORMANCE CV
 %------------------------------
-<<svmmajcrossval result,echo=FALSE,results=tex>>=
+<<svmmajcrossval result, echo=FALSE, results=tex>>=
 library(xtable)
 
 values <- data.frame(
@@ -795,7 +794,7 @@ time.quadratic <- system.time(
 
 time.absolute <- system.time(
   results.absolute <- svmmajcrossval(
-    voting.tr$X, voting.tr$y, 
+    voting.tr$X, voting.tr$y,
     search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
     hinge = "absolute")
 )
@@ -860,8 +859,8 @@ Another way of implementing nonlinearity in the model by using a kernel. In this
 %GRAPHICS: SPLINES
 %---------------------------
 \begin{figure}[!ht]\begin{center}
-\SweaveOpts{width=12, height=18}
-<<splineweightsplot, fig=TRUE, echo=FALSE, width = 12, height = 18>>=
+\SweaveOpts{width=10, height=16}
+<<splineweightsplot, fig=TRUE, echo=FALSE, width = 10, height = 16>>=
 plotWeights(model.spline)
 @
 \caption{The spline plots of each of 8 variables used to predict the result of a test for diabetes among females of Pima Indian heritages. This model has been performed with \texttt{lambda =} $10$ and the spline basis with 5 inner knots and a degree of 2. Each graph denotes the loss term of the corresponding variable with different values. The higher the predicted value $\tilde{q}$, the higher the probability of positive test.}\label{fig:splines}
@@ -906,7 +905,7 @@ Another advantage of \pkg{SVM-Maj} is the possibility to use different loss func
 %%%%
 %%%%===============================================
 %%%%===============================================
-\section[Efficent updates for SVMMaj]{Efficient updates for \pkg{SVM-Maj}}\label{Sect:Appendix}
+\section[Efficient updates for SVMMaj]{Efficient updates for \pkg{SVM-Maj}}\label{Sect:Appendix}
 Recall that the relationship between $\bq$ and $\bbeta$ can be written as
 \begin{equation}\label{eqn:qXb}
 	\bq=\bX\bbeta.
@@ -920,7 +919,7 @@ To illustrate this, we will use the singular value decomposition (SVD) of $\bX$:
 		\bX             & = &     \bP       &   \bL       &   \bQ^\top,\\
 		(n\times k)     &   &  (n\times r)  & (r\times r) & (r\times k)
 	\end{array}\end{equation}
-where $\bP$ and $\bQ$ are orthonomal matrices which satisfy $\bP^\top\bP = \bI$ and $\bQ^\top\bQ=\bI$ and $\bL$ is a diagonal matrix. The relationship between $\bq$ and $\bbeta$ can then be written as:
+where $\bP$ and $\bQ$ are orthonormal matrices which satisfy $\bP^\top\bP = \bI$ and $\bQ^\top\bQ=\bI$ and $\bL$ is a diagonal matrix. The relationship between $\bq$ and $\bbeta$ can then be written as:
 %====================================
 % P'q = L Q' beta
 %====================================

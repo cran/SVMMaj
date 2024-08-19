@@ -2,7 +2,7 @@
 #' 
 #' Trained SVM model as output from \code{\link[SVMMaj]{svmmaj}}. 
 #' The returning object consist of the following values: 
-#' \itemize{
+#' \describe{
 #'   \item{call}{ The function specifications which has been called.}
 #'   \item{lambda}{ The regularization parameter of the penalty 
 #'        term which has been used.} 
@@ -155,8 +155,8 @@ plot.svmmaj <- function(x, ...)
   obj$Class <- factor(obj$Class)
   levels(obj$Class) <- paste0(classnames, " (", levels(obj$Class), ")")
   
-  ggplot(obj, aes_string(
-    x = "q", y = "..count..", color = "Class", fill = "Class")) + 
+  ggplot(obj, aes(
+    x = .data$q, y = after_stat(count), color = .data$Class, fill = .data$Class)) + 
     geom_density(alpha = 0.5) +
     geom_vline(xintercept = 0, linetype = 'longdash', color = '#8A8A8A', size = 1.0) +
     theme_light() + 

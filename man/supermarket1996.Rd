@@ -4,8 +4,9 @@
 \name{supermarket1996}
 \alias{supermarket1996}
 \title{Supermarket data 1996}
-\format{This dataframe contains the following columns
-\itemize{
+\format{
+This dataframe contains the following columns
+\describe{
   \item{STORE}{Identifier of the store}
   \item{CITY}{The city of the store}
   \item{ZIP}{The zip code of the store}
@@ -56,7 +57,8 @@
   \item{SHPBIRD}{}
   \item{SHOPINDX}{}
   \item{SHPINDX}{}
-}}
+}
+}
 \description{
 This
 }

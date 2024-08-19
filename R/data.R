@@ -4,7 +4,7 @@
 #' @name supermarket1996
 #' @docType data
 #' @format This dataframe contains the following columns
-#' \itemize{
+#' \describe{
 #'   \item{STORE}{Identifier of the store}
 #'   \item{CITY}{The city of the store}
 #'   \item{ZIP}{The zip code of the store}
@@ -91,7 +91,7 @@ NULL
 #' \code{AusCredit} contains all 690 objects.
 #' @source Chih-Chung Chang and Chih-Jen Lin, LIBSVM : a library for support
 #' vector machines, 2001.  Software available at
-#' \url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
+#' \url{https://www.csie.ntu.edu.tw/~cjlin/libsvm/}.
 #' @keywords datasets
 #' @examples
 #' 
@@ -124,7 +124,7 @@ NULL
 #'  \code{blood.press} \tab diastolic blood pressure (mm Hg) \cr 
 #'  \code{triceps.thick} \tab triceps skin fold thickness (mm) \cr
 #'  \code{insulin} \tab 2-Hour serum insulin (mu U/ml) \cr 
-#'  \code{BMI} \tab body mass index (weight in kg/(height in m)\^2) \cr 
+#'  \code{BMI} \tab body mass index (weight in kg/(height in m)**2) \cr 
 #'  \code{pedigree} \tab diabetes pedigree function \cr 
 #'  \code{age} \tab age in years
 #' }
@@ -142,7 +142,7 @@ NULL
 #' Society Press.
 #' @source Chih-Chung Chang and Chih-Jen Lin, LIBSVM : a library for support
 #' vector machines, 2001. Software available at
-#' \url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
+#' \url{https://www.csie.ntu.edu.tw/~cjlin/libsvm/}.
 #' @keywords datasets
 #' @examples
 #' 
@@ -190,7 +190,7 @@ NULL
 #'  \code{X13} \tab superfund-right-to-sue \cr 
 #'  \code{X14} \tab crime \cr 
 #'  \code{X15} \tab duty-free-exports \cr 
-#'  \code{X16} \tab export-administration-act-south-africe \cr 
+#'  \code{X16} \tab export-administration-act-south-africa \cr 
 #'  }
 #' 
 #' \code{y} consists factors which denotes whether the congress member is a
@@ -201,7 +201,7 @@ NULL
 #' \code{voting} contains all 434 objects.
 #' @source Chih-Chung Chang and Chih-Jen Lin, LIBSVM : a library for support
 #' vector machines, 2001. Software available at
-#' \url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
+#' \url{https://www.csie.ntu.edu.tw/~cjlin/libsvm/}.
 #' @keywords datasets
 #' @examples
 #' 

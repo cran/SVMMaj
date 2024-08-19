@@ -4,7 +4,7 @@
 ### code chunk number 1: R session setup
 ###################################################
 options(prompt="R> ")
-options(mc.cores = 2)
+options(mc.cores = 1)
 
 
 ###################################################
@@ -176,7 +176,7 @@ time.quadratic <- system.time(
 
 time.absolute <- system.time(
   results.absolute <- svmmajcrossval(
-    voting.tr$X, voting.tr$y, 
+    voting.tr$X, voting.tr$y,
     search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
     hinge = "absolute")
 )

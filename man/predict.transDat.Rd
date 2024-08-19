@@ -4,8 +4,14 @@
 \alias{predict.transDat}
 \title{Perform the transformation based on predefined settings}
 \usage{
-\method{predict}{transDat}(x, attrib = NULL, values = NULL,
-  standardization = NULL, splineInterval = NULL, splineDegree = NULL)
+\method{predict}{transDat}(
+  x,
+  attrib = NULL,
+  values = NULL,
+  standardization = NULL,
+  splineInterval = NULL,
+  splineDegree = NULL
+)
 }
 \arguments{
 \item{x}{a (new) vector of numerics to be transformed}

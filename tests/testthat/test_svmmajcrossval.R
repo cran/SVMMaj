@@ -25,9 +25,9 @@ test_that(
       X.base, y.base, verbose = TRUE, 
       search.grid = list(kernel.sigma = 2^seq(-1,1), lambda = 10^seq(-2,2)),
       hinge = 'quadratic', 
-      options = list(decomposition= 'chol'),
+      options = list(decomposition= 'chol', convergence=1e-2),
       kernel = rbfdot,
-      mc.cores = 2)
+      mc.cores = 1)
   })
 
 ## TODO

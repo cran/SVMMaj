@@ -144,7 +144,21 @@ test_that(
 
 test_that(
   desc = "Example returns no majority voting", {
-    example(svmmaj)
+    model1 <- svmmaj(diabetes$X, diabetes$y, hinge = 'quadratic', lambda = 1)
+    library(kernlab)
+    weights.obs <- list(positive = 2, negative = 1)
+    model2 <- svmmaj(
+      diabetes$X, diabetes$y, hinge = 'quadratic', lambda = 1, 
+      weights.obs = weights.obs, scale = 'interval',
+      kernel = rbfdot,
+      kernel.sigma = 1
+    )
+    ## I-spline basis
+    library(ggplot2)
+    model3 <- svmmaj(
+      diabetes$X, diabetes$y, weight.obs = weight.obs,
+      spline.knots = 3, spline.degree = 2
+    )
     is_maj_voting <- function(q, eps = 0.01) {
       signs <- sign(q) > 0
       min_avg <- min(mean(signs), 1 - mean(signs))

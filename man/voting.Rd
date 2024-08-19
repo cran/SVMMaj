@@ -6,7 +6,8 @@
 \alias{voting.tr}
 \alias{voting.te}
 \title{Congressional Voting Records Data Set}
-\format{\code{X} is a data frame with 434 congress members and 16 attributes: 16 key
+\format{
+\code{X} is a data frame with 434 congress members and 16 attributes: 16 key
 votes identified by the Congressional Quarterly Almanac (CQA). All
 attributes are binary values, with \code{1=} yes and \code{0=} no.
 
@@ -26,7 +27,7 @@ attributes are binary values, with \code{1=} yes and \code{0=} no.
  \code{X13} \tab superfund-right-to-sue \cr 
  \code{X14} \tab crime \cr 
  \code{X15} \tab duty-free-exports \cr 
- \code{X16} \tab export-administration-act-south-africe \cr 
+ \code{X16} \tab export-administration-act-south-africa \cr 
  }
 
 \code{y} consists factors which denotes whether the congress member is a
@@ -34,11 +35,12 @@ attributes are binary values, with \code{1=} yes and \code{0=} no.
 
 The training set \code{voting.tr} contains a randomly selected set of 300
 subjects, and \code{voting.te} contains the remaining 134 subjects.
-\code{voting} contains all 434 objects.}
+\code{voting} contains all 434 objects.
+}
 \source{
 Chih-Chung Chang and Chih-Jen Lin, LIBSVM : a library for support
 vector machines, 2001. Software available at
-\url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
+\url{https://www.csie.ntu.edu.tw/~cjlin/libsvm/}.
 }
 \description{
 1984 United Stated Congressional Voting Records; Classify as Republican or

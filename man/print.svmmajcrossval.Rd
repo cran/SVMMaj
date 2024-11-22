@@ -17,6 +17,6 @@
 \item{object}{the output object from \code{svmmajcrossval}}
 }
 \description{
-Prints the result from the cross validation procedure in 
+Prints the result from the cross validation procedure in
 \code{\link{svmmajcrossval}}.
 }

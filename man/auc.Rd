@@ -18,7 +18,7 @@ the area under the curve value
 Returns the area under the curve value as a fraction.
 }
 \examples{
-df   <- with(diabetes, cbind(y, X))
+df <- with(diabetes, cbind(y, X))
 lm.y <- glm(y ~ ., data = df, family = binomial())
 print(with(lm.y, auc(fitted.values, y)))
 

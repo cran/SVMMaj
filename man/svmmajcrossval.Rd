@@ -62,7 +62,7 @@ The level of the factors which gives the minimum loss term value.}
 \item{loss.grp}{A list of missclassification rates per hold-out sample}
 \item{groups}{A vector defining the cross-validation groups which has been
 used.}
-\item{qhat}{The estimated out-of-sample predicted values in the 
+\item{qhat}{The estimated out-of-sample predicted values in the
 cross-validation.}
 \item{qhat.in}{The trained predicted values}
 \item{param.grid}{ The matrix of all gridpoints which has been performed
@@ -82,8 +82,8 @@ yt <- diabetes$y
 
 ## performing gridsearch with k-fold cross-validation
 results <- svmmajcrossval(
-   Xt, yt, 
-  scale = 'interval',
+  Xt, yt,
+  scale = "interval",
   mc.cores = 2,
   ngroup = 5,
   return.model = TRUE
@@ -92,7 +92,7 @@ results <- svmmajcrossval(
 summary(results$model)
 results
 plot(results)
-plot(results, 'profile')
+plot(results, "profile")
 }
 \references{
 P.J.F. Groenen, G. Nalbantov and J.C. Bioch (2008)

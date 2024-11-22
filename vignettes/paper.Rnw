@@ -48,7 +48,7 @@ Support Vector Machines (SVMs) have gained considerable popularity over the last
 \begin{document}
 \SweaveOpts{concordance=FALSE}
 <<R session setup, echo=FALSE>>=
-options(prompt="R> ")
+options(prompt = "R> ")
 options(mc.cores = 1)
 @
 
@@ -167,9 +167,9 @@ output <- data.frame(
 names(output) <- c("q", "Absolute hinge", "Quadratic hinge",  "Huber hinge \n(delta = 2)")
 
 ggplot(melt(output, id.vars = "q")) +
-  geom_line(aes(x = q, y = value)) + 
+  geom_line(aes(x = q, y = value)) +
   facet_grid(~ variable) +
-  ylim(0,8) +
+  ylim(0, 8) +
   xlab(expression(widetilde(q[i]))) +
   ylab("error term class 1") +
   theme_bw()
@@ -694,7 +694,7 @@ As this model does not contain any nonlinearity and $\bX$ is nonstandardized, $\
 
 
 <<Model parameters>>=
-model <- svmmaj(AusCredit.tr$X, AusCredit.tr$y, scale = 'none', lambda = 100)
+model <- svmmaj(AusCredit.tr$X, AusCredit.tr$y, scale = "none", lambda = 100)
 alpha <- model$theta[1]
 beta  <- model$beta
 qu  <-  drop(alpha + data.matrix(AusCredit.te$X) %*% beta)
@@ -723,12 +723,12 @@ In this example, we will use the data in \texttt{voting.tr} to perform five-fold
 
 <<svmmajcrossval absolute hinge example>>=
 results.absolute <- svmmajcrossval(
-  voting.tr$X, voting.tr$y, 
-  search.grid = list(lambda = 10^seq(4, -4)),
-  hinge = "absolute", convergence = 1e-4)
+                                   voting.tr$X, voting.tr$y,
+                                   search.grid = list(lambda = 10^seq(4, -4)),
+                                   hinge = "absolute", convergence = 1e-4)
 model <- svmmaj(
-  voting.tr$X, voting.tr$y, hinge = "absolute", 
-  lambda = results.absolute$param.opt$lambda)
+                voting.tr$X, voting.tr$y, hinge = "absolute",
+                lambda = results.absolute$param.opt$lambda)
 q.absolute <- predict(model, voting.te$X, voting.te$y)
 @
 
@@ -737,12 +737,12 @@ q.absolute <- predict(model, voting.te$X, voting.te$y)
 
 <<svmmajcrossval quadratic hinge example>>=
 results.quadratic <- svmmajcrossval(
-  voting.tr$X, voting.tr$y,
-  search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
-  hinge = "quadratic", convergence = 1e-4)
+                                    voting.tr$X, voting.tr$y,
+                                    search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+                                    hinge = "quadratic", convergence = 1e-4)
 model <- svmmaj(
-  voting.tr$X, voting.tr$y, hinge = "quadratic",
-  lambda = results.quadratic$param.opt$lambda)
+                voting.tr$X, voting.tr$y, hinge = "quadratic",
+                lambda = results.quadratic$param.opt$lambda)
 q.quadratic <- predict(model, voting.te$X, voting.te$y)
 @
 
@@ -756,12 +756,12 @@ A summary of the results of these examples can be found in Table~\ref{tab:cv}. F
 <<svmmajcrossvalresultscompare,fig=TRUE, weight = 12, height = 6, echo=FALSE>>=
 library(gridExtra)
 grid.arrange(
-  plot(results.absolute) + 
-    ggtitle("Absolute hinge") + 
+  plot(results.absolute) +
+    ggtitle("Absolute hinge") +
     ylab("Misclassification rate") +
     ylim(0, 1),
   plot(results.quadratic) +
-    ggtitle("Quadratic hinge") + 
+    ggtitle("Quadratic hinge") +
     ylab("Misclassification rate") +
     ylim(0, 1),
   ncol = 2
@@ -778,48 +778,55 @@ library(xtable)
 
 values <- data.frame(
   " " = c("CPU-time (sec)", "Mean no. of iter",
-         "CPU-time (per iter)", "Optimal p", 
-         "Hit rate (average TP)"),
-  'Absolute'  = rep(0, 5),
-  'Quadratic' = rep(0, 5),
+          "CPU-time (per iter)", "Optimal p",
+          "Hit rate (average TP)"),
+  "Absolute"  = rep(0, 5),
+  "Quadratic" = rep(0, 5),
   check.names = FALSE
 )
 
 time.quadratic <- system.time(
   results.quadratic <- svmmajcrossval(
-    voting.tr$X, voting.tr$y,
-    search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
-    hinge = "quadratic")
+                                      voting.tr$X, voting.tr$y,
+                                      search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+                                      hinge = "quadratic")
 )
 
 time.absolute <- system.time(
   results.absolute <- svmmajcrossval(
-    voting.tr$X, voting.tr$y,
-    search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
-    hinge = "absolute")
+                                     voting.tr$X, voting.tr$y,
+                                     search.grid = list(lambda = 10^seq(4, -2, length.out = 11)),
+                                     hinge = "absolute")
 )
 
 values$Absolute <- c(
-  time.absolute[['elapsed']], results.absolute$iter,
-  time.absolute[['elapsed']] / results.absolute$iter,
+  time.absolute[["elapsed"]], results.absolute$iter,
+  time.absolute[["elapsed"]] / results.absolute$iter,
   log(results.absolute$param.opt$lambda) / log(10),
-  mean((results.absolute$qhat < 0) ==  (attr(results.absolute$qhat, 'y') < 0))
+  mean((results.absolute$qhat < 0) ==  (attr(results.absolute$qhat, "y") < 0))
 )
 
 values$Quadratic <- c(
-  time.quadratic[['elapsed']], results.quadratic$iter,
-  time.quadratic[['elapsed']] / results.quadratic$iter,
+  time.quadratic[["elapsed"]], results.quadratic$iter,
+  time.quadratic[["elapsed"]] / results.quadratic$iter,
   log(results.quadratic$param.opt$lambda) / log(10),
-  mean((results.quadratic$qhat < 0) == (attr(results.quadratic$qhat, 'y') < 0))
+  mean((results.quadratic$qhat < 0) == (attr(results.quadratic$qhat, "y") < 0))
 )
 
 rownames(values) <- NULL
 table <- xtable(
   values,
   label = "tab:cv",
-  caption = "Results of the fivefold cross validation estimation using the \\texttt{svmcrossval} function. CPU-time is the time in CPU seconds needed to perform fivefold cross validation and Optimal $p$ the value of which $10^p$ returns the best hit rate in the cross validation. Mean no. of iterations denotes the average value of the sum of the number of iterations per \\texttt{lambda}-value. CPU-time per iter is the mean computation time needed to perform one iteration. Hit rate is the average TP value by predicting the class labels of the holdout sample of 134 congress men using the first 300 congress men as sample of estimation."
+  caption = paste(
+    "Results of the fivefold cross validation estimation using the \\texttt{svmcrossval} function.",
+    "CPU-time is the time in CPU seconds needed to perform fivefold cross validation and Optimal $p$ the value",
+    "of which $10^p$ returns the best hit rate in the cross validation. Mean no. of iterations denotes the average",
+    "value of the sum of the number of iterations per \\texttt{lambda}-value. CPU-time per iter is the mean",
+    "computation time needed to perform one iteration. Hit rate is the average TP value by predicting the class",
+    "labels of the holdout sample of 134 congress men using the first 300 congress men as sample of estimation."
+  )
 )
-  
+
 print(table, include.rownames = FALSE)
 @
 
@@ -836,18 +843,18 @@ One way of applying nonlinearities in the model is using splines. In this exampl
 
 <<svmmajcrossval spline example>>=
 results.spline <- svmmajcrossval(
-  diabetes.tr$X, diabetes.tr$y,
-  scale = "interval", search.grid = list(lambda = 10^seq(6, -6)),
-  hinge = "quadratic", spline.knots = 5, spline.degree = 2,
-  weights.obs = list(positive = 2, negative = 1))
+                                 diabetes.tr$X, diabetes.tr$y,
+                                 scale = "interval", search.grid = list(lambda = 10^seq(6, -6)),
+                                 hinge = "quadratic", spline.knots = 5, spline.degree = 2,
+                                 weights.obs = list(positive = 2, negative = 1))
 model.spline <- svmmaj(
-  diabetes.tr$X, diabetes.tr$y,
-  scale = "interval", lambda = results.spline$param.opt$lambda,
-  spline.knots = 5, spline.degree = 2, hinge = "quadratic",
-  weights.obs = list(positive = 2, negative = 1))
+                       diabetes.tr$X, diabetes.tr$y,
+                       scale = "interval", lambda = results.spline$param.opt$lambda,
+                       spline.knots = 5, spline.degree = 2, hinge = "quadratic",
+                       weights.obs = list(positive = 2, negative = 1))
 predict(
-  model.spline, diabetes.te$X, diabetes.te$y,
-  weights = list(positive = 2, negative = 1))
+        model.spline, diabetes.te$X, diabetes.te$y,
+        weights = list(positive = 2, negative = 1))
 @
 
 The optimal \texttt{lambda} for the model using I-splines can be found in \texttt{results.spline\$param.opt}, which is $10^1$. This \texttt{lambda} value equals the penalty value which will give the lowest misclassification rate in the cross-validation. One of the advantages of using splines to handle nonlinear prediction is the possibility to show the effect of a variable by plotting its estimated transformation. Figure~\ref{fig:splines} shows these plots of the splines per variable, which can be used for interpretation of the effects of each individual variable. In this figure, one can clearly see nonlinear effects in most variables. For example, the  \textit{diabetes pedigree} (\code{x7}) shows a positive relation with respect to female patients with \code{positive} results, but with a diminishing returns to scale. On the other hand, \textit{Age} (\code{x8}) has a reverse \textit{v}-shape: respondents who are around 40 are more likely to have diabetes. Overall, \textit{glucose concentration} (\code{x2}) and \textit{BMI} (\code{x6}) have the largest effect on the class prediction when its values are large.
@@ -860,8 +867,10 @@ Another way of implementing nonlinearity in the model by using a kernel. In this
 %---------------------------
 \begin{figure}[!ht]\begin{center}
 \SweaveOpts{width=10, height=16}
-<<splineweightsplot, fig=TRUE, echo=FALSE, width = 10, height = 16>>=
-plotWeights(model.spline)
+<<splineweightsplot, results=tex, echo=FALSE, width = 10, height = 16>>=
+p <- plotWeights(model.spline)
+ggsave("paper-splineweightsplot.pdf", p[[1]])
+cat("\\includegraphics{paper-splineweightsplot.pdf}\n\n")
 @
 \caption{The spline plots of each of 8 variables used to predict the result of a test for diabetes among females of Pima Indian heritages. This model has been performed with \texttt{lambda =} $10$ and the spline basis with 5 inner knots and a degree of 2. Each graph denotes the loss term of the corresponding variable with different values. The higher the predicted value $\tilde{q}$, the higher the probability of positive test.}\label{fig:splines}
 \end{center}\end{figure}
@@ -869,23 +878,23 @@ plotWeights(model.spline)
 <<svmmajcrossval kernel example>>=
 library(kernlab)
 results.kernel <- svmmajcrossval(
-  diabetes.tr$X, diabetes.tr$y,
-  scale = "interval", 
-  search.grid = list(
-    kernel.sigma = 2^seq(-4, 4, by = 2),
-    lambda = 10^seq(-4, 4, by = 2)
-  ), hinge = "quadratic", kernel = rbfdot,
-  weights.obs = list(positive = 2, negative = 1),
-  options = list(convergence = 1e-4))
+                                 diabetes.tr$X, diabetes.tr$y,
+                                 scale = "interval",
+                                 search.grid = list(
+                                   kernel.sigma = 2^seq(-4, 4, by = 2),
+                                   lambda = 10^seq(-4, 4, by = 2)
+                                 ), hinge = "quadratic", kernel = rbfdot,
+                                 weights.obs = list(positive = 2, negative = 1),
+                                 options = list(convergence = 1e-4))
 model.kernel <- svmmaj(
-  diabetes.tr$X, diabetes.tr$y,
-  scale = "interval", lambda = results.kernel$param.opt$lambda,
-  kernel.sigma = results.kernel$param.opt$kernel.sigma,
-  kernel = rbfdot, hinge = "quadratic",
-  weights.obs = list(positive = 2, negative = 1))
+                       diabetes.tr$X, diabetes.tr$y,
+                       scale = "interval", lambda = results.kernel$param.opt$lambda,
+                       kernel.sigma = results.kernel$param.opt$kernel.sigma,
+                       kernel = rbfdot, hinge = "quadratic",
+                       weights.obs = list(positive = 2, negative = 1))
 predict(
-  model.kernel, diabetes.te$X, diabetes.te$y,
-  weights = list(positive = 2, negative = 1))
+        model.kernel, diabetes.te$X, diabetes.te$y,
+        weights = list(positive = 2, negative = 1))
 @
 
 %The optimal parameter values for the kernel model are: \texttt{lambda=}$10^0$ and \texttt{sigma=}$2^0$.

@@ -17,7 +17,7 @@ transformation}
 
 \item{standardize}{Either a string value denoting a predefined scaling, or a
 list with values \code{a} and \code{b} corresponding with the numeric
-centering and scaling, that is, using the function 
+centering and scaling, that is, using the function
 \code{x * standardize$b - standardize$a}.}
 
 \item{spline.knots}{Number of inner knots to use. \code{isb} will equally
@@ -27,10 +27,10 @@ distribute the knots over the value range using quantiles.
 \item{spline.degree}{The polynomial degree of the spline basis.}
 }
 \value{
-transformed data in spline basis or (in case of no spline) 
+transformed data in spline basis or (in case of no spline)
   a normalized vector
 }
 \description{
-Performs subsequently a normalization of the input data and 
+Performs subsequently a normalization of the input data and
 creating spline basis based on the user defined input
 }

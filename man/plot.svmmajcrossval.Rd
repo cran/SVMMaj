@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{the \code{svmmajcrossval} object}
 
-\item{type}{the type of graph being shown, possible values are 
+\item{type}{the type of graph being shown, possible values are
 \code{'grid'} for the missclassification rate per lambda value,
 \code{'profile'} the distribution of predicted values
 of the classes per lambda value}
@@ -18,7 +18,7 @@ of the classes per lambda value}
 }
 \description{
 Shows the results of the cross validation graphically.
-Possible graphics are among others the distribution of 
-the predicted values \code{q} per class per lambda value 
+Possible graphics are among others the distribution of
+the predicted values \code{q} per class per lambda value
 and the misclassification rate per lambda.
 }

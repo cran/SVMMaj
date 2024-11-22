@@ -69,7 +69,7 @@ factor) consisting the class labels.}
 
 \item{lambda}{Regularization parameter of the penalty term.}
 
-\item{weights.obs}{a vector of length \code{n} with the nonnegative weight 
+\item{weights.obs}{a vector of length \code{n} with the nonnegative weight
 for the residual of each object (with length \code{n}).  If the length is
  \code{2}, then it specifies the weight per class.}
 
@@ -81,16 +81,16 @@ needs to be standardized into zscores or to the interval \code{[0 1]}.
 Possible values are: \code{none}, \code{zscore} and \code{interval}.
 Moreover, the standardization parameters can be given instead.}
 
-\item{spline.knots}{equals the number of internal knots of the spline basis. 
-  When the number of knots exceeds the number of (categorical) values of 
-  an explanatory variable, the duplicate knots will be removed using 
+\item{spline.knots}{equals the number of internal knots of the spline basis.
+  When the number of knots exceeds the number of (categorical) values of
+  an explanatory variable, the duplicate knots will be removed using
 \code{\link[base]{unique}}. For no splines, use \code{spline.knots = 0}.}
 
-\item{spline.degree}{equals the polynomial degree of the splines, 
+\item{spline.degree}{equals the polynomial degree of the splines,
 for no splines:\code{spline.degree = 1}.}
 
 \item{kernel}{Specifies which kernel function to be used (see
-\code{\link[kernlab]{dots}} of package \pkg{kernlab}). 
+\code{\link[kernlab]{dots}} of package \pkg{kernlab}).
 Default kernel is the linear kernel.}
 
 \item{kernel.sigma}{additional parameters used for the kernel function
@@ -105,10 +105,10 @@ Default kernel is the linear kernel.}
 \item{kernel.offset}{additional parameters used for the kernel function
 (see \code{\link[kernlab]{dots}})}
 
-\item{hinge}{Specifies with hinge function from 
+\item{hinge}{Specifies with hinge function from
 \code{\link[SVMMaj]{getHinge}} should be used.}
 
-\item{hinge.delta}{The parameter of the huber hinge 
+\item{hinge.delta}{The parameter of the huber hinge
 (only if \code{hinge = 'huber'}).}
 
 \item{options}{additional settings used in the \code{svmmaj} algorithm}
@@ -121,10 +121,10 @@ iteration.}
 \item{na.action}{Generic function for handling NA values.}
 }
 \value{
-Returns a svmmaj-class object, 
+Returns a svmmaj-class object,
   of which the methods \code{plot},
-  \code{plotWeights}, \code{summary} and \code{predict} can be applied.  
-  (see also \code{\link[SVMMaj]{predict.svmmaj}} and 
+  \code{plotWeights}, \code{summary} and \code{predict} can be applied.
+  (see also \code{\link[SVMMaj]{predict.svmmaj}} and
   \code{\link[SVMMaj]{print.svmmaj}})
 }
 \description{
@@ -141,11 +141,11 @@ efficient when \code{n < k}.  Apart from the standard absolute hinge error,
 SVM-Maj can also handle the quadratic and the Huber hinge.
 }
 \details{
-The following settings can be added as element in the \code{options} 
+The following settings can be added as element in the \code{options}
 parameter:
 \code{decomposition} Specifies whether the QR decomposition should be used
-for efficient updates. Possible values are \code{'svd'} for Singular value 
-decomposition (Eigenvalue decomposition for non-linear kernel) or 
+for efficient updates. Possible values are \code{'svd'} for Singular value
+decomposition (Eigenvalue decomposition for non-linear kernel) or
 \code{'chol'} for Cholesky (or QR decomposition in case of linear kernel)
 
 \code{convergence} Specifies the convergence criterion of the algorithm.
@@ -163,15 +163,18 @@ input values.
 
 ## using default settings
 model1 <- svmmaj(
- diabetes$X, diabetes$y, hinge = 'quadratic', lambda = 1)
+  diabetes$X, diabetes$y,
+  hinge = "quadratic", lambda = 1
+)
 summary(model1)
 
-weights.obs = list(positive = 2, negative = 1)
+weights.obs <- list(positive = 2, negative = 1)
 ## using radial basis kernel
 library(kernlab)
 model2 <- svmmaj(
-  diabetes$X, diabetes$y, hinge = 'quadratic', lambda = 1, 
-  weights.obs = weights.obs, scale = 'interval',
+  diabetes$X, diabetes$y,
+  hinge = "quadratic", lambda = 1,
+  weights.obs = weights.obs, scale = "interval",
   kernel = rbfdot,
   kernel.sigma = 1
 )
@@ -179,21 +182,22 @@ summary(model2)
 ## I-spline basis
 library(ggplot2)
 model3 <- svmmaj(
-  diabetes$X, diabetes$y, weight.obs = weight.obs,
+  diabetes$X, diabetes$y,
+  weight.obs = weight.obs,
   spline.knots = 3, spline.degree = 2
 )
 plotWeights(model3, plotdim = c(2, 4))
 }
 \references{
 P.J.F. Groenen, G. Nalbantov and J.C. Bioch (2008)
-     \emph{SVM-Maj: a majorization approach to linear support vector machines 
+     \emph{SVM-Maj: a majorization approach to linear support vector machines
      with different hinge errors.}
 }
 \seealso{
 \code{\link[kernlab]{dots}} for the computations of the kernels.
-     \code{\link[SVMMaj]{predict.svmmaj}} 
+     \code{\link[SVMMaj]{predict.svmmaj}}
      \code{\link[SVMMaj]{normalize}}
-     \code{\link[SVMMaj]{isb}} 
+     \code{\link[SVMMaj]{isb}}
      \code{\link[SVMMaj]{getHinge}}
 }
 \author{

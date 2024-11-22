@@ -13,17 +13,17 @@ classification(q, y, classes = c("-1", "1"), weights = NULL)
 
 \item{classes}{a character vector with the labels of the two classes}
 
-\item{weights}{an optional parameter to specify a weighted hit rate and 
+\item{weights}{an optional parameter to specify a weighted hit rate and
 misclassification rate}
 }
 \value{
-a list with three elements, \code{matrix} equals the confusion 
-  matrix,\code{overall} equals the overall prediction performance and 
+a list with three elements, \code{matrix} equals the confusion
+  matrix,\code{overall} equals the overall prediction performance and
   in \code{measures} the measures per class is stored.
 }
 \description{
-Given the predicted value \code{q} and the observed classes \code{y}, 
-it shows an overview of the prediction performances with hit rates, 
-misclassification rates, true positives (TP), false positives (FP) 
+Given the predicted value \code{q} and the observed classes \code{y},
+it shows an overview of the prediction performances with hit rates,
+misclassification rates, true positives (TP), false positives (FP)
 and precision.
 }

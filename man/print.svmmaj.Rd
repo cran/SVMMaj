@@ -23,36 +23,36 @@
 \item{object}{the \code{svmmaj} object as result of \code{\link[SVMMaj]{svmmaj}}}
 }
 \description{
-Trained SVM model as output from \code{\link[SVMMaj]{svmmaj}}. 
-The returning object consist of the following values: 
+Trained SVM model as output from \code{\link[SVMMaj]{svmmaj}}.
+The returning object consist of the following values:
 \describe{
   \item{call}{ The function specifications which has been called.}
-  \item{lambda}{ The regularization parameter of the penalty 
-       term which has been used.} 
+  \item{lambda}{ The regularization parameter of the penalty
+       term which has been used.}
   \item{loss}{ The corresponding loss function
-       value of the final solution.} 
+       value of the final solution.}
   \item{iteration}{ Number of iterations needed
        to evaluate the algorithm.}
-  \item{X}{ The attribute matrix of \code{dim(X) = c(n,k)}.} 
-  \item{y}{ The vector of length \code{n} with the actual class labels. 
-       These labels can be numeric \code{[0 1]} or two strings.} 
-  \item{classes}{ A vector of length \code{n} with the predicted 
+  \item{X}{ The attribute matrix of \code{dim(X) = c(n,k)}.}
+  \item{y}{ The vector of length \code{n} with the actual class labels.
+       These labels can be numeric \code{[0 1]} or two strings.}
+  \item{classes}{ A vector of length \code{n} with the predicted
        class labels of each object, derived from q.tilde}
-   \item{Xtrans}{ The attribute matrix \code{X} after standardization and 
-       (if specified) spline transformation.} 
-   \item{norm.param}{ The applied normalization parameters 
+   \item{Xtrans}{ The attribute matrix \code{X} after standardization and
+       (if specified) spline transformation.}
+   \item{norm.param}{ The applied normalization parameters
        (see \code{\link[SVMMaj]{normalize}}).}
-   \item{splineInterval}{ The spline knots which has been used 
-       (see \code{\link[SVMMaj]{isb}}).} 
+   \item{splineInterval}{ The spline knots which has been used
+       (see \code{\link[SVMMaj]{isb}}).}
    \item{splineLength}{Denotes the number of spline basis of
        each explanatory variable in \code{X}.}
    \item{method}{The decomposition matrices used in estimating the model.}
-   \item{hinge}{ The hinge function which has been used 
+   \item{hinge}{ The hinge function which has been used
        (see \code{\link[SVMMaj]{getHinge}}).}
    \item{beta }{If identified, the beta parameters for the linear combination
        (only available for linear kernel).}
-   \item{q}{ A vector of length \code{n} with predicted values of 
-       each object including the intercept.} 
+   \item{q}{ A vector of length \code{n} with predicted values of
+       each object including the intercept.}
    \item{nSV}{ Number of support vectors.}
    }
 }

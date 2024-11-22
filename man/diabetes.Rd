@@ -9,15 +9,15 @@
 \format{
 \code{X} is a data frame of 768 female patients with 8 attributes.
 
-\tabular{ll}{ 
+\tabular{ll}{
  \code{no.pregnant} \tab number of pregnancies. \cr
- \code{glucose} \tab plasma glucose concentration in an oral glucose 
-                     tolerance test \cr 
- \code{blood.press} \tab diastolic blood pressure (mm Hg) \cr 
+ \code{glucose} \tab plasma glucose concentration in an oral glucose
+                     tolerance test \cr
+ \code{blood.press} \tab diastolic blood pressure (mm Hg) \cr
  \code{triceps.thick} \tab triceps skin fold thickness (mm) \cr
- \code{insulin} \tab 2-Hour serum insulin (mu U/ml) \cr 
- \code{BMI} \tab body mass index (weight in kg/(height in m)**2) \cr 
- \code{pedigree} \tab diabetes pedigree function \cr 
+ \code{insulin} \tab 2-Hour serum insulin (mu U/ml) \cr
+ \code{BMI} \tab body mass index (weight in kg/(height in m)**2) \cr
+ \code{pedigree} \tab diabetes pedigree function \cr
  \code{age} \tab age in years
 }
 

@@ -11,23 +11,23 @@
 votes identified by the Congressional Quarterly Almanac (CQA). All
 attributes are binary values, with \code{1=} yes and \code{0=} no.
 
-\tabular{ll}{ 
- \code{X1} \tab handicapped-infants \cr 
- \code{X2} \tab water-project-cost-sharing \cr 
- \code{X3} \tab adoption-of-the-budget-resolution \cr 
- \code{X4} \tab physician-fee-freeze \cr 
- \code{X5} \tab el-salvador-aid \cr 
- \code{X6} \tab religious-groups-in-schools \cr 
+\tabular{ll}{
+ \code{X1} \tab handicapped-infants \cr
+ \code{X2} \tab water-project-cost-sharing \cr
+ \code{X3} \tab adoption-of-the-budget-resolution \cr
+ \code{X4} \tab physician-fee-freeze \cr
+ \code{X5} \tab el-salvador-aid \cr
+ \code{X6} \tab religious-groups-in-schools \cr
  \code{X7} \tab anti-satellite-test-ban \cr
- \code{X8} \tab aid-to-nicaraguan-contras \cr 
+ \code{X8} \tab aid-to-nicaraguan-contras \cr
  \code{X9} \tab mx-missile \cr
- \code{X10} \tab immigration \cr 
- \code{X11} \tab synfuels-corporation-cutback \cr 
- \code{X12} \tab education-spending \cr 
- \code{X13} \tab superfund-right-to-sue \cr 
- \code{X14} \tab crime \cr 
- \code{X15} \tab duty-free-exports \cr 
- \code{X16} \tab export-administration-act-south-africa \cr 
+ \code{X10} \tab immigration \cr
+ \code{X11} \tab synfuels-corporation-cutback \cr
+ \code{X12} \tab education-spending \cr
+ \code{X13} \tab superfund-right-to-sue \cr
+ \code{X14} \tab crime \cr
+ \code{X15} \tab duty-free-exports \cr
+ \code{X16} \tab export-administration-act-south-africa \cr
  }
 
 \code{y} consists factors which denotes whether the congress member is a

@@ -9,10 +9,10 @@
 \arguments{
 \item{x}{The hinge object returned from \code{getHinge}.}
 
-\item{y}{Specifies the class (\code{-1} or \code{1}) 
+\item{y}{Specifies the class (\code{-1} or \code{1})
 to be plotted for the hinge error.}
 
-\item{z}{If specified, the majorization function with the supporting point 
+\item{z}{If specified, the majorization function with the supporting point
 \code{z} will also be plotted.}
 
 \item{...}{Other arguments passed to plot method.}

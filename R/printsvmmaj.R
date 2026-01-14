@@ -168,7 +168,7 @@ plot.svmmaj <- function(x, ...) {
     x = .data$q, y = after_stat(count), color = .data$Class, fill = .data$Class
   )) +
     geom_density(alpha = 0.5) +
-    geom_vline(xintercept = 0, linetype = "longdash", color = "#8A8A8A", size = 1.0) +
+    geom_vline(xintercept = 0, linetype = "longdash", color = "#8A8A8A", linewidth = 1.0) +
     theme_light() +
     xlab(expression(widetilde(q))) +
     ggtitle(

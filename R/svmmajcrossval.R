@@ -421,9 +421,9 @@ plot.svmmajcrossval <- function(x, type = "grid", ...) {
 
     if ("lambda" %in% colnames(x$param.grid)) {
       p <- ggplot(rng) +
-        geom_line(aes_string(x = "lambda", y = "loss")) +
+        geom_line(aes(x = .data[["lambda"]], y = .data[["loss"]])) +
         geom_ribbon(
-          aes_string(x = "lambda", ymin = "min", ymax = "max"),
+          aes(x = .data[["lambda"]], ymin = .data[["min"]], ymax = .data[["max"]]),
           fill = "gray", alpha = .3
         ) +
         scale_x_log10() +
@@ -438,7 +438,7 @@ plot.svmmajcrossval <- function(x, type = "grid", ...) {
       p <- p + ylim(0, max(rng$max))
     } else {
       p <- ggplot(x$param.grid) +
-        geom_line(aes_string(x = names(x$param.grid)[1], y = "loss")) +
+        geom_line(aes(x = .data[[names(x$param.grid)[1]]], y = .data[["loss"]])) +
         theme_light() +
         ggtitle("Cross-validation performance per grid value")
 
@@ -483,10 +483,8 @@ plot.svmmajcrossval <- function(x, type = "grid", ...) {
 
     levels(df$y) <- x$classes
 
-    df_grp <- do.call(
-      group_by_,
-      c(list(df, "lambda", "y", "sample"), as.list(params))
-    ) %>%
+    df_grp <- df %>%
+      group_by(pick(all_of(c("lambda", "y", "sample", params)))) %>%
       summarize(
         q_low  = quantile(qhat, .20),
         q_high = quantile(qhat, .80),
@@ -494,11 +492,11 @@ plot.svmmajcrossval <- function(x, type = "grid", ...) {
       ) %>%
       ungroup()
 
-    p <- ggplot(df_grp, aes_string(x = "lambda")) +
+    p <- ggplot(df_grp, aes(x = .data[["lambda"]])) +
       scale_x_log10() +
-      geom_line(aes_string(y = "qhat", color = "y"), size = 1.5) +
+      geom_line(aes(y = .data[["qhat"]], color = .data[["y"]]), size = 1.5) +
       geom_ribbon(
-        aes_string(ymin = "q_low", ymax = "q_high", fill = "y"),
+        aes(ymin = .data[["q_low"]], ymax = .data[["q_high"]], fill = .data[["y"]]),
         alpha = .3
       ) +
       ggtitle("Distribution of predicted values per class per lambda") +

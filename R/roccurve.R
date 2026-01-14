@@ -31,8 +31,8 @@ roccurve <- function(q, y = attr(q, "y"), class = 1, ...) {
   )
 
   ggplot(df) +
-    geom_line(aes_string(
-      x = "x", y = "y"
+    geom_line(aes(
+      x = .data[["x"]], y = .data[["y"]]
     )) +
     geom_abline(intercept = 0, slope = 1, alpha = 0.4) +
     ggtitle(

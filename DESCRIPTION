@@ -1,8 +1,8 @@
 Package: SVMMaj
 Type: Package
 Title: Implementation of the SVM-Maj Algorithm
-Version: 0.2.9.3
-Date: 2024-11-21
+Version: 0.2.9.4
+Date: 2026-01-14
 Authors@R: c(
     person(given = "Hoksan", family = "Yip", role = c("aut", "cre"), email = "hoksan@gmail.com"),
     person(given = c("Patrick", "J.F."), family = "Groenen", role = "aut"),
@@ -18,13 +18,13 @@ Depends: R (>= 2.13.0), stats, graphics, parallel
 Suggests: utils, testthat, magrittr, xtable
 License: GPL-2
 LazyData: Yes
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 VignetteBuilder: utils
 NeedsCompilation: no
-Packaged: 2024-11-21 23:25:00 UTC; hoksanyip
+Packaged: 2026-01-14 19:52:12 UTC; hoksanyip
 Author: Hoksan Yip [aut, cre],
   Patrick J.F. Groenen [aut],
   Georgi Nalbantov [aut]
 Maintainer: Hoksan Yip <hoksan@gmail.com>
 Repository: CRAN
-Date/Publication: 2024-11-22 13:40:18 UTC
+Date/Publication: 2026-01-14 20:40:02 UTC

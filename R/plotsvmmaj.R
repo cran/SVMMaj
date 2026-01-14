@@ -73,7 +73,7 @@ plotWeights <- function(object, plotdim = c(3, 3), ...) {
         plots[[i]] <- ggplot(data.frame(
           effect = bspl[[i]], treatment = object$propData[[i]]$values
         )) +
-          geom_bar(aes_string(x = "treatment", y = "effect"),
+          geom_bar(aes(x = .data[["treatment"]], y = .data[["effect"]]),
             stat = "identity", position = "identity"
           ) +
           ylim(ylim) +
@@ -83,7 +83,7 @@ plotWeights <- function(object, plotdim = c(3, 3), ...) {
         plots[[i]] <- ggplot(data.frame(
           effect = c(0, bspl[[i]]), treatment = c("FALSE", "TRUE")
         )) +
-          geom_bar(aes_string(x = "treatment", y = "effect"),
+          geom_bar(aes(x = .data[["treatment"]], y = .data[["effect"]]),
             stat = "identity", position = "identity"
           ) +
           ylim(ylim) +
@@ -111,9 +111,9 @@ plotWeights <- function(object, plotdim = c(3, 3), ...) {
         )
 
         plots[[i]] <- ggplot(splines_dat) +
-          geom_line(aes_string(
-            x = "x", y = "value",
-            colour = "Splines", linetype = "Splines"
+          geom_line(aes(
+            x = .data[["x"]], y = .data[["value"]],
+            colour = .data[["Splines"]], linetype = .data[["Splines"]]
           )) +
           theme_light() +
           ylim(ylim) +
@@ -134,7 +134,7 @@ plotWeights <- function(object, plotdim = c(3, 3), ...) {
             x = X.bxp,
             y = predict.transDat(Xold[, i], attrib = object$propData[[i]]) %*% bspl[[i]]
           ),
-          aes_string(x = "x", y = "y"),
+          aes(x = .data[["x"]], y = .data[["y"]]),
           position = "jitter", sides = "b", alpha = 0.25
         )
 
@@ -154,9 +154,9 @@ get_legend <- function() {
   splits_lty <- structure(1:3, names = splits)
 
   myggplot <- ggplot(expand.grid(x = 0:1, Splines = splits)) +
-    geom_line(aes_string(
-      x = "x", y = "x",
-      colour = "Splines", linetype = "Splines"
+    geom_line(aes(
+      x = .data[["x"]], y = .data[["x"]],
+      colour = .data[["Splines"]], linetype = .data[["Splines"]]
     )) +
     scale_colour_manual(name = "Splines", values = splits_col) +
     scale_linetype_manual(name = "Splines", values = splits_lty)

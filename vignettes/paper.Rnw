@@ -1,7 +1,7 @@
 %\VignetteIndexEntry{paper}
 %\VignetteEngine{utils::Sweave}
 
-\documentclass[article,shortnames]{jss}
+\documentclass[article,shortnames,nojss]{jss}
 \usepackage[boxed]{algorithm2e}\IncMargin{1em}
 \renewcommand\AlCapFnt{\normalfont}
 \usepackage[counterclockwise]{rotating}
@@ -33,7 +33,7 @@ Support Vector Machines (SVMs) have gained considerable popularity over the last
 	Erasmus University Rotterdam\\
 	3062 PA Rotterdam, The Netherlands\\
 	E-mail: \email{groenen@ese.eur.nl}\\
-	URL: \url{https://people.few.eur.nl/groenen}
+	URL: \url{https://personal.eur.nl/groenen/}
 }
 
 %\Volume{1}
